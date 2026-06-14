@@ -7,6 +7,8 @@ export type View = "reports" | "report" | "settings" | "tasks" | "goals" | "hypo
 export type SettingsSection = "datasources" | "apikeys" | "appearance" | "updates" | "about" | "aichat";
 export type ObStep = "welcome" | "datasource" | "sync" | "coach" | "mcpkey" | null;
 export type TasksView = "by-goal" | "all";
+export type UpdaterState = "idle" | "checking" | "available" | "downloading" | "downloaded" | "none" | "error";
+export interface UpdaterStatus { state: UpdaterState; version?: string; progress?: number; platform?: string; error?: string; }
 
 export interface TasksFilter {
   search: string;
@@ -75,9 +77,13 @@ interface AppState {
   mcpDrawer: boolean;
   setMcpDrawer: (v: boolean) => void;
 
-  // update toast
+  // update toast (dev/mock override) + real updater status
   updateToast: boolean;
   setUpdateToast: (v: boolean) => void;
+  updater: UpdaterStatus;
+  setUpdater: (u: UpdaterStatus) => void;
+  appVersion: string;
+  setAppVersion: (v: string) => void;
 
   // chat overlay (Cmd+K)
   chatOpen: boolean;
@@ -304,6 +310,10 @@ export const useApp = create<AppState>((set, get) => ({
 
   updateToast: false,
   setUpdateToast: (updateToast) => set({ updateToast }),
+  updater: { state: "idle" },
+  setUpdater: (updater) => set({ updater }),
+  appVersion: "0.1.0",
+  setAppVersion: (appVersion) => set({ appVersion }),
 
   trackerCount: 0,
   setTrackerCount: (trackerCount) => set({ trackerCount }),

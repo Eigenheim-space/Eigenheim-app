@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Check, AlertCircle, Trash2, Lock, Copy } from "lucide-react";
 import { useApp, type SettingsSection } from "./store";
 import { api, ENGINE } from "./api";
+import { updaterBridge } from "./updater";
 import { secrets, type SavedSource } from "./secrets";
 import { buildMcpConfig } from "./data";
 import { Badge, Button, Field, Input, Select, Segmented, Checkbox, Snippet, Drawer, copyText } from "./ui";
@@ -566,9 +567,18 @@ function Appearance() {
 }
 
 function Updates() {
-  const restart = useApp((s) => s.setUpdateToast);
+  const updater = useApp((s) => s.updater);
+  const appVersion = useApp((s) => s.appVersion);
   const [channel, setChannel] = useState("stable");
-  const [checking, setChecking] = useState(false);
+  const checking = updater.state === "checking" || updater.state === "downloading";
+
+  let status = "";
+  if (updater.state === "none") status = "You're on the latest version.";
+  else if (updater.state === "available") status = `Update available: ${updater.version ?? ""} (see the toast to download).`;
+  else if (updater.state === "downloading") status = updater.progress != null ? `Downloading… ${updater.progress}%` : "Downloading…";
+  else if (updater.state === "downloaded") status = "Update downloaded. Restart to apply (see the toast).";
+  else if (updater.state === "error") status = `Update check failed: ${updater.error ?? "unknown error"}.`;
+
   return (
     <div>
       <H>Updates</H>
@@ -576,10 +586,11 @@ function Updates() {
         <Field label="Update channel" hint="stable — verified releases; dev — early access">
           <Segmented value={channel} onChange={setChannel} options={[{ value: "stable", label: "stable" }, { value: "dev", label: "dev" }]} />
         </Field>
-        <div className="tnum" style={{ fontSize: 14, color: "var(--text-secondary)" }}>Current version: <b>0.1.0</b></div>
+        <div className="tnum" style={{ fontSize: 14, color: "var(--text-secondary)" }}>Current version: <b>{appVersion}</b></div>
         <div>
-          <Button hierarchy="secondary" onClick={() => { setChecking(true); setTimeout(() => { setChecking(false); restart(true); }, 900); }}>{checking ? "Checking…" : "Check now"}</Button>
+          <Button hierarchy="secondary" onClick={() => { updaterBridge?.check(); }}>{checking ? "Checking…" : "Check now"}</Button>
         </div>
+        {status && <div style={{ fontSize: 13, color: "var(--text-tertiary)" }}>{status}</div>}
       </div>
     </div>
   );

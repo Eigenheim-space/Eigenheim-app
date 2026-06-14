@@ -4,6 +4,7 @@ import { useApp } from "./store";
 import { api } from "./api";
 import { buildMcpConfig } from "./data";
 import { Ket, Button, Field, Input, Select, Badge, Snippet, ErrorBanner, useCoachAnchor } from "./ui";
+import { updaterBridge } from "./updater";
 
 function StepCard({ children, width = 460 }: { children: React.ReactNode; width?: number }) {
   return (
@@ -320,18 +321,43 @@ export function CoachMarks() {
 
 /* ---------------- Update toast ---------------- */
 export function UpdateToast() {
-  const show = useApp((s) => s.updateToast);
-  const setShow = useApp((s) => s.setUpdateToast);
-  const restart = useApp((s) => s.restartEngine);
+  const updater = useApp((s) => s.updater);
+  const devToast = useApp((s) => s.updateToast);
+  const setDevToast = useApp((s) => s.setUpdateToast);
+  const [dismissed, setDismissed] = useState(false);
+  // A fresh status (new state/version) re-shows the toast even after a "Later".
+  useEffect(() => { setDismissed(false); }, [updater.state, updater.version]);
+
+  const downloaded = updater.state === "downloaded";            // win/linux: ready to restart
+  const macAvailable = updater.state === "available" && updater.platform === "mac"; // mac: download+open
+  const downloading = updater.state === "downloading";
+  const show = !dismissed && (downloaded || macAvailable || downloading || devToast);
   if (!show) return null;
+
+  // Copy + primary action depend on platform/state.
+  let title = "Update ready", body = "Restart eigenheim to apply?", action = "Restart";
+  if (macAvailable) {
+    title = "Update available";
+    body = `Download eigenheim ${updater.version ?? ""} and open the installer?`.replace("  ", " ");
+    action = "Download";
+  } else if (downloading) {
+    title = "Downloading update…";
+    body = updater.progress != null ? `${updater.progress}%` : "Fetching the latest version…";
+  }
+
+  const apply = () => { updaterBridge?.apply().catch(() => {}); if (devToast) setDevToast(false); };
+  const later = () => { setDismissed(true); if (devToast) setDevToast(false); };
+
   return (
     <div className="eh-fadein" role="status" style={{ position: "fixed", bottom: 16, right: 16, zIndex: 55, width: 320, background: "var(--color-white)", border: "1px solid var(--border-secondary)", borderRadius: "var(--radius-toast)", boxShadow: "var(--shadow-2xl)", padding: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}><RefreshCw size={16} color="var(--brand-600)" /><span style={{ fontSize: 14, fontWeight: 600 }}>Update ready</span></div>
-      <div style={{ fontSize: 13, color: "var(--text-tertiary)", marginBottom: 14 }}>Restart eigenheim to apply?</div>
-      <div style={{ display: "flex", gap: 8 }}>
-        <Button hierarchy="primary" size="sm" onClick={() => { setShow(false); restart(); }}>Restart</Button>
-        <Button hierarchy="tertiary" size="sm" onClick={() => setShow(false)}>Later</Button>
-      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}><RefreshCw size={16} color="var(--brand-600)" /><span style={{ fontSize: 14, fontWeight: 600 }}>{title}</span></div>
+      <div style={{ fontSize: 13, color: "var(--text-tertiary)", marginBottom: 14 }}>{body}</div>
+      {!downloading && (
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button hierarchy="primary" size="sm" onClick={apply}>{action}</Button>
+          <Button hierarchy="tertiary" size="sm" onClick={later}>Later</Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -53,11 +53,13 @@ jobs:
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "Release $TAG already exists, reusing it."
           else
+            # NOT a GitHub "pre-release": electron-updater + /releases/latest skip
+            # pre-release-flagged releases, which would break in-app auto-update. The
+            # software is still pre-release (0.x + README); the flag just stays off.
             gh release create "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --title "$TAG" \
-              --prerelease \
-              --notes "Unsigned pre-release builds for macOS, Windows, and Linux. These are not code-signed yet, so your OS will warn that the app is from an unidentified developer. See the Install section in the README for how to open it on each OS. Build from source: BUILD.md."
+              --notes "Unsigned builds for macOS, Windows, and Linux. Not code-signed yet, so your OS will warn that the app is from an unidentified developer. See the Install section in the README for how to open it on each OS. Build from source: BUILD.md."
           fi
 
   # ─────────────────────────────────────────────
@@ -101,14 +103,16 @@ jobs:
         working-directory: apps/desktop
         run: npm run bundle-engine
 
-      - name: Package unsigned installer(s)
+      - name: Package unsigned installer(s) + update metadata
         working-directory: apps/desktop
         env:
           # Explicitly disable signing + auto-publish: we upload manually below.
+          # --publish never still WRITES latest*.yml + .blockmap into release/ (the
+          # electron-updater feed); we just upload them ourselves alongside the installers.
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npx electron-builder --publish never
 
-      - name: Upload installers to the release
+      - name: Upload installers + update feed to the release
         shell: bash
         working-directory: apps/desktop
         env:
@@ -117,9 +121,10 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          files=(release/*.dmg release/*.zip release/*.exe release/*.AppImage)
+          # Installers + the electron-updater feed (latest*.yml) + differential blockmaps.
+          files=(release/*.dmg release/*.zip release/*.exe release/*.AppImage release/*.yml release/*.blockmap)
           if [ ${#files[@]} -eq 0 ]; then
-            echo "No installers found in release/ for ${{ matrix.os }}" >&2
+            echo "No artifacts found in release/ for ${{ matrix.os }}" >&2
             ls -la release/ || true
             exit 1
           fi

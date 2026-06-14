@@ -1,7 +1,7 @@
 {
   "name": "@eigenheim/desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "eigenheim — deterministic product metrics for PMs",
   "author": "Nikita Yurtayev",
   "type": "module",
@@ -26,6 +26,7 @@
     "@fontsource/jetbrains-mono": "^5",
     "@tanstack/react-query": "^5.101.0",
     "clsx": "^2",
+    "electron-updater": "^6",
     "lucide-react": "^0.460.0",
     "react": "^19",
     "react-dom": "^19",

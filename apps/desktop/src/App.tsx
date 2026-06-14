@@ -16,6 +16,7 @@ import { RiceView } from "./rice";
 import { ChatOverlay } from "./chat/ChatOverlay";
 import { queryKeys, bootstrapQueryFn, reportDetailQueryFn, getEngineReportIds, queryClient } from "./queries";
 import { api } from "./api";
+import { updaterBridge } from "./updater";
 
 export function App() {
   const engine = useApp((s) => s.engine);
@@ -28,6 +29,15 @@ export function App() {
   const chatOpen = useApp((s) => s.chatOpen);
   const setEngineLive = useApp((s) => s.setEngineLive);
   const setTrackerCount = useApp((s) => s.setTrackerCount);
+  const setUpdater = useApp((s) => s.setUpdater);
+  const setAppVersion = useApp((s) => s.setAppVersion);
+
+  // Subscribe to in-app update status + load the real app version (Electron only).
+  useEffect(() => {
+    if (!updaterBridge) return;
+    updaterBridge.version().then(setAppVersion).catch(() => {});
+    return updaterBridge.onStatus(setUpdater);
+  }, [setUpdater, setAppVersion]);
 
   // Bootstrap query: replaces the old loadFromEngine() + trackers useEffect.
   // On success → engineLive=true; on error → engineLive=false (offline/mock mode).

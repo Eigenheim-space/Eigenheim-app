@@ -70,8 +70,9 @@ linux:
 
 win:
   target: [nsis]
-  # TODO(signing): Windows auto-update disabled until OV certificate is purchased.
-  # See eigenheim-plan/12-install-updates.md § "Подпись: бюджетная правда".
+  # NSIS auto-update via electron-updater works WITHOUT code signing (SmartScreen still
+  # warns on first install). An OV cert only removes the SmartScreen warning, not updates.
+  # TODO(signing): buy an OV cert at Phase 3 to drop the SmartScreen prompt.
 
 # Auto-update feed (electron-updater reads this).
 # TODO(signing): switch to the live release repo post Phase 3 public flip.

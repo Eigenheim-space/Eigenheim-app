@@ -24,6 +24,8 @@ import { createRequire } from "node:module";
 import http from "node:http";
 import net from "node:net";
 
+import { initUpdater } from "./updater.mjs";
+
 const require = createRequire(import.meta.url);
 const secrets = require("./secrets.cjs"); // safeStorage custodian (CJS — needs Electron's require)
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -236,6 +238,8 @@ app.whenReady().then(async () => {
   await startSidecar();
   await waitForHealth();
   createWindow();
+  // Wire in-app updates: status events flow to whatever window is current.
+  initUpdater((status) => { try { win?.webContents.send("updater:status", status); } catch { /* window gone */ } });
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 

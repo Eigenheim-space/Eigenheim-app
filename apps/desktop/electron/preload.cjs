@@ -26,4 +26,15 @@ contextBridge.exposeInMainWorld("eigenheim", {
     getKey: (id) => ipcRenderer.invoke("secrets:getKey", id),
     deleteSource: (id) => ipcRenderer.invoke("secrets:deleteSource", id),
   },
+  // In-app updates. status flows from the main process; check()/apply() are user-gated.
+  updater: {
+    version: () => ipcRenderer.invoke("updater:version"),
+    check: () => ipcRenderer.invoke("updater:check"),
+    apply: () => ipcRenderer.invoke("updater:apply"),
+    onStatus: (cb) => {
+      const handler = (_e, status) => cb(status);
+      ipcRenderer.on("updater:status", handler);
+      return () => ipcRenderer.removeListener("updater:status", handler);
+    },
+  },
 });
