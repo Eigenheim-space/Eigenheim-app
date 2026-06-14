@@ -234,6 +234,10 @@ ipcMain.handle("secrets:listSources", () => secrets.listSources());
 ipcMain.handle("secrets:getKey", (_e, id) => secrets.getKey(id));
 ipcMain.handle("secrets:deleteSource", (_e, id) => secrets.deleteSource(id));
 
+// Relaunch the app for a clean engine respawn (EngineFailure "Restart"). The quit
+// handler kills the sidecar; relaunch starts a fresh instance.
+ipcMain.handle("app:relaunch", () => { app.relaunch(); app.exit(0); });
+
 app.whenReady().then(async () => {
   await startSidecar();
   await waitForHealth();

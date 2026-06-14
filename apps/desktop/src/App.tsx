@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useApp } from "./store";
-import { LeftRail, RightPanel, BootState, EngineFailure, DemoBar } from "./shell";
+import { LeftRail, RightPanel, BootState, EngineFailure } from "./shell";
 import { ReportsGrid, ReportView } from "./reports";
 import { Settings } from "./settings";
 import { TraceModal } from "./trace";
@@ -28,6 +28,7 @@ export function App() {
   const closeChat = useApp((s) => s.closeChat);
   const chatOpen = useApp((s) => s.chatOpen);
   const setEngineLive = useApp((s) => s.setEngineLive);
+  const setEngine = useApp((s) => s.setEngine);
   const setTrackerCount = useApp((s) => s.setTrackerCount);
   const setUpdater = useApp((s) => s.setUpdater);
   const setAppVersion = useApp((s) => s.setAppVersion);
@@ -52,6 +53,7 @@ export function App() {
   useEffect(() => {
     if (bootstrapOk) {
       setEngineLive(true);
+      setEngine("ready"); // engine answered → leave the boot screen
       // Prefetch every report detail into the query cache so findReportForMetric
       // can resolve Trace links against LIVE data even when the user lands on
       // Goals/Hypotheses/Decisions/Rice/Tasks before opening a ReportView.
@@ -62,11 +64,11 @@ export function App() {
         });
       });
     }
-  }, [bootstrapOk, setEngineLive]);
+  }, [bootstrapOk, setEngineLive, setEngine]);
 
   useEffect(() => {
-    if (bootstrapErr) setEngineLive(false);
-  }, [bootstrapErr, setEngineLive]);
+    if (bootstrapErr) { setEngineLive(false); setEngine("failed"); }
+  }, [bootstrapErr, setEngineLive, setEngine]);
 
   // Tracker count: used only for the Tasks rail gate.
   useQuery({
@@ -133,7 +135,6 @@ export function App() {
       <CoachMarks />
       <UpdateToast />
       <ChatOverlay />
-      <DemoBar />
       {/* silence unused warning when right panel hidden */}
       <span hidden>{String(rightOpen)}</span>
     </div>

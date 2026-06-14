@@ -208,18 +208,14 @@ export const invalidate = {
 
 // ── Report cache helpers (replaces Zustand reportCache / engineReportIds) ──────
 
-import { REPORTS } from "./data";
-
 /**
- * Read a report (with metrics) from the query cache.
- * Falls back to the bundled mock if no live data is cached yet.
+ * Read a report (with metrics) from the query cache. Returns null on a cache miss
+ * (no mock fallback — production shows real data or nothing).
  * Use inside event handlers and ChatOverlay.buildContextBlock (outside React).
  */
-export function getReportFromCache(id: string | null | undefined): ReportOut | import("./data").Report | null {
+export function getReportFromCache(id: string | null | undefined): ReportOut | null {
   if (!id) return null;
-  const cached = queryClient.getQueryData<ReportOut>(queryKeys.reportDetail(id));
-  if (cached) return cached;
-  return REPORTS.find((r) => r.id === id) ?? null;
+  return queryClient.getQueryData<ReportOut>(queryKeys.reportDetail(id)) ?? null;
 }
 
 /**
@@ -236,7 +232,7 @@ export function getEngineReportIds(): string[] {
  * Searches all cached report-detail entries then falls back to mock.
  * Call from event handlers only (not during render — no reactivity).
  */
-export function findReportForMetric(metricId: string): ReportOut | import("./data").Report | null {
+export function findReportForMetric(metricId: string): ReportOut | null {
   // Search all cached detail entries
   for (const key of (queryClient.getQueryCache().getAll() as unknown as { queryKey: readonly unknown[]; state: { data?: unknown } }[])) {
     if (
@@ -249,8 +245,7 @@ export function findReportForMetric(metricId: string): ReportOut | import("./dat
       if (data?.metrics?.some((m) => m.id === metricId)) return data;
     }
   }
-  // Fall back to mock
-  return REPORTS.find((r) => r.metrics?.some((m) => m.id === metricId)) ?? null;
+  return null; // no mock fallback — cache miss returns null
 }
 
 // Re-export payload types used by mutations (avoids import chains in surfaces)

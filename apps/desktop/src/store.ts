@@ -171,11 +171,16 @@ interface AppState {
 }
 
 export const useApp = create<AppState>((set, get) => ({
-  engine: "ready",
+  // Real engine state: starts "booting"; App's bootstrap query drives it to "ready"
+  // (engine answered) or "failed" (offline after retries). No mock default.
+  engine: "booting",
   setEngine: (engine) => set({ engine }),
   restartEngine: () => {
     set({ engine: "booting" });
-    setTimeout(() => set({ engine: "ready" }), 1600);
+    // Packaged: relaunch the app for a clean engine respawn. Browser-dev: soft reset.
+    const eh = (window as { eigenheim?: { relaunch?: () => void } }).eigenheim;
+    if (eh?.relaunch) eh.relaunch();
+    else setTimeout(() => set({ engine: "ready" }), 1600);
   },
 
   engineLive: false,
@@ -184,7 +189,7 @@ export const useApp = create<AppState>((set, get) => ({
   firstRun: false,
   obStep: null,
   coachIndex: 0,
-  dataSourceConnected: true,
+  dataSourceConnected: false,
   startOnboarding: () => set({ obStep: "welcome", dataSourceConnected: false, coachIndex: 0 }),
   setObStep: (obStep) => set({ obStep }),
   nextCoach: () => {

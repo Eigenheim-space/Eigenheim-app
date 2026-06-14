@@ -17,6 +17,8 @@ const enginePort = portArg ? portArg.slice(PORT_PREFIX.length) : "8765";
 contextBridge.exposeInMainWorld("eigenheim", {
   token,
   engineUrl: `http://127.0.0.1:${enginePort}`,
+  // Relaunch the whole app (clean engine respawn) — used by the EngineFailure "Restart".
+  relaunch: () => ipcRenderer.invoke("app:relaunch"),
   // safeStorage-backed source secrets. The key is encrypted at rest by the OS
   // keychain in the main process; the renderer only ever holds metadata + a
   // just-in-time decrypted key for a sync it triggers.

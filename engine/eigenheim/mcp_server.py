@@ -59,7 +59,7 @@ mcp = FastMCP("eigenheim", instructions=SERVER_DESCRIPTION)
 
 # Open the persisted store (same path the REST layer uses).
 _conn = db.connect()
-db.init_and_seed(_conn)
+db.init_schema(_conn)  # production starts empty; sample events are test/dev only
 store_db.ensure_schema(_conn)
 store_db.seed_defaults(_conn)
 store_db.run_migrations(_conn)

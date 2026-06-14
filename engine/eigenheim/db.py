@@ -72,7 +72,9 @@ def connect(path: str | os.PathLike | None = None) -> sqlite3.Connection:
     return conn
 
 
-def init_and_seed(conn: sqlite3.Connection) -> None:
+def init_schema(conn: sqlite3.Connection) -> None:
+    """Create the events schema only. Production starts EMPTY: a fresh install has no
+    events until a data source (PostHog) is connected and synced."""
     conn.executescript(
         """
         CREATE TABLE IF NOT EXISTS events (
@@ -85,7 +87,19 @@ def init_and_seed(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS ix_events_user ON events(user_id, name, ts);
         """
     )
+
+
+def seed_sample_events(conn: sqlite3.Connection) -> None:
+    """Insert the deterministic sample event set. Tests + dev only, NOT production.
+    The sample proves the deterministic-compute promise before a real source is wired."""
     (count,) = conn.execute("SELECT count(*) FROM events").fetchone()
     if count == 0:
         conn.executemany("INSERT INTO events(user_id, name, ts) VALUES (?,?,?)", _gen_events())
         conn.commit()
+
+
+def init_and_seed(conn: sqlite3.Connection) -> None:
+    """Schema + deterministic sample data. Used by the test fixtures and dev tooling;
+    PRODUCTION uses init_schema() alone so a fresh install starts empty."""
+    init_schema(conn)
+    seed_sample_events(conn)

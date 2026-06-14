@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, ArrowUpRight, ArrowDownRight, ArrowLeft, TrendingUp } from "lucide-react";
 import { useApp } from "./store";
 import { api } from "./api";
-import { REPORTS, type Report, type Metric } from "./data";
+import { type Report, type Metric } from "./data";
 import { Badge, StatusBadge, Button, Segmented, Sparkline, EmptyState, ErrorBanner, Modal, Tooltip } from "./ui";
 import { ChatAffordance } from "./chat/ChatOverlay";
 import { queryKeys, bootstrapQueryFn, reportDetailQueryFn, getReportFromCache, getEngineReportIds, invalidate } from "./queries";
@@ -31,7 +31,7 @@ export function ReportsGrid() {
   const firstRun = useApp((s) => s.firstRun);
   // Bootstrap gives us the live report list; fall back to mock on engine offline.
   const { data: bootstrap } = useQuery({ queryKey: queryKeys.engineBootstrap, queryFn: bootstrapQueryFn, staleTime: 2 * 60 * 1000 });
-  const reports: Report[] = (bootstrap?.reports as Report[] | undefined) ?? REPORTS;
+  const reports: Report[] = (bootstrap?.reports as Report[] | undefined) ?? [];
   if (firstRun) {
     return <EmptyState line="Create your first report" button={<Button hierarchy="primary" iconLeading={<Plus size={16} />}>Create report</Button>} />;
   }
@@ -101,7 +101,7 @@ export function ReportView() {
   });
 
   // Resolve report: live > query-cache fallback > mock
-  const report = liveReport ?? getReportFromCache(id) ?? REPORTS.find((r) => r.id === id) ?? null;
+  const report = liveReport ?? getReportFromCache(id) ?? null;
 
   // Count-up animation fires only on first live-data load for this report ID.
   const firstLoadRef = useRef(true);

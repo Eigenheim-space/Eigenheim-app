@@ -61,7 +61,7 @@ async def lifespan(app: FastAPI):
     # touching the developer's or user's default data directory.
     db_path = os.environ.get("EIGENHEIM_DB") or None
     conn = db.connect(db_path)
-    db.init_and_seed(conn)
+    db.init_schema(conn)  # production starts empty; no sample events (data comes from synced sources)
     store_db.ensure_schema(conn)
     store_db.seed_defaults(conn)
     # Back up before migrating so a bad migration never corrupts the only copy.

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Plus, Play, Pause, Pencil, ChevronDown, ChevronUp } from "lucide-react";
 import { useApp } from "./store";
 import { api } from "./api";
-import { EVENTS, LOGIC, TEMPLATES, SYNCS } from "./data";
+import { TEMPLATES } from "./data";
 import { Badge, StatusBadge, Button, Field, Input, Drawer, EmptyState, ErrorBanner, IconButton, Tooltip } from "./ui";
 import { queryKeys, bootstrapQueryFn, invalidate, taskFacetsQueryFn } from "./queries";
 
@@ -17,7 +17,7 @@ export function EventsTab() {
   const connected = useApp((s) => s.dataSourceConnected);
   const goSettings = useApp((s) => s.goSettings);
   const { data: bootstrap } = useQuery({ queryKey: queryKeys.engineBootstrap, queryFn: bootstrapQueryFn, staleTime: 2 * 60 * 1000 });
-  const events = bootstrap?.events ?? EVENTS;
+  const events = bootstrap?.events ?? [];
   const [q, setQ] = useState("");
 
   if (!connected) {
@@ -88,7 +88,7 @@ export function EventsTab() {
 export function LogicTab() {
   const setLogicDrawer = useApp((s) => s.setLogicDrawer);
   const { data: bootstrap } = useQuery({ queryKey: queryKeys.engineBootstrap, queryFn: bootstrapQueryFn, staleTime: 2 * 60 * 1000 });
-  const logic = bootstrap?.logic ?? LOGIC;
+  const logic = bootstrap?.logic ?? [];
   const noLogic = logic.length === 0;
   return (
     <div data-coach-anchor="logic-tab" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -152,7 +152,7 @@ export function LogicTab() {
 export function SyncsTab() {
   const setSyncDrawer = useApp((s) => s.setSyncDrawer);
   const { data: bootstrap } = useQuery({ queryKey: queryKeys.engineBootstrap, queryFn: bootstrapQueryFn, staleTime: 2 * 60 * 1000 });
-  const syncs = bootstrap?.syncs ?? SYNCS;
+  const syncs = bootstrap?.syncs ?? [];
   /* Find the most recent failed sync to surface an inline error */
   const failedSync = syncs.find((s) => s.lastStatus === "error");
   return (
@@ -239,7 +239,8 @@ export function LogicDrawer() {
 export function SyncDrawer() {
   const id = useApp((s) => s.syncDrawerId);
   const close = () => useApp.getState().setSyncDrawer(null);
-  const sync = SYNCS.find((s) => s.id === id);
+  const { data: bootstrap } = useQuery({ queryKey: queryKeys.engineBootstrap, queryFn: bootstrapQueryFn, staleTime: 2 * 60 * 1000 });
+  const sync = (bootstrap?.syncs ?? []).find((s) => s.id === id);
   if (!sync) return null;
   return (
     <Drawer title={sync.target} onClose={close}>

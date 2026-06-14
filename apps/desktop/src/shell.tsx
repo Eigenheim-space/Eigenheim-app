@@ -143,7 +143,7 @@ function Waveform() {
 }
 export function BootState() {
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20 }}>
+    <div role="status" aria-label="Engine starting" style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20 }}>
       <Waveform />
       <div style={{ fontSize: 15, color: "var(--text-tertiary)" }}>Engine starting…</div>
     </div>
@@ -154,10 +154,10 @@ export function EngineFailure() {
   const diag = "Engine: start stopped. The sidecar did not respond within 10s (timeout). Restart it below, or quit and reopen eigenheim.";
   return (
     <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div style={{ maxWidth: 520, width: "100%", border: "1px solid var(--error-300)", background: "var(--error-50)", borderRadius: 12, padding: 24 }}>
+      <div role="alert" style={{ maxWidth: 520, width: "100%", border: "1px solid var(--error-300)", background: "var(--error-50)", borderRadius: 12, padding: 24 }}>
         <div style={{ fontSize: 16, fontWeight: 600, color: "var(--error-700)" }}>Engine: start stopped</div>
         <div style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 8, lineHeight: 1.55 }}>
-          The local sidecar did not respond within 10 seconds. Restart it below, or quit and reopen eigenheim.
+          Sidecar timeout after 10s. Restart below, or quit and reopen eigenheim.
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
           <Button hierarchy="primary" iconLeading={<RefreshCw size={15} />} onClick={restart}>Restart</Button>
@@ -168,21 +168,3 @@ export function EngineFailure() {
   );
 }
 
-/* ---------------- Demo state switcher (exercises boot/failure/onboarding/toast) ---------------- */
-export function DemoBar() {
-  const { engine, setEngine, firstRun, toggleFirstRun, updateToast, setUpdateToast } = useApp();
-  const seg = (label: string, on: boolean, onClick: () => void) => (
-    <button onClick={onClick} style={{ padding: "3px 9px", fontSize: 12, fontWeight: 600, borderRadius: 6, border: "1px solid " + (on ? "var(--brand-300)" : "transparent"), background: on ? "var(--brand-50)" : "transparent", color: on ? "var(--brand-700)" : "var(--text-tertiary)", cursor: "pointer" }}>{label}</button>
-  );
-  return (
-    <div style={{ position: "fixed", bottom: 12, left: 12, zIndex: 50, display: "flex", alignItems: "center", gap: 6, background: "var(--color-white)", border: "1px solid var(--border-secondary)", borderRadius: 10, boxShadow: "var(--shadow-lg)", padding: "5px 8px" }}>
-      <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-quaternary)", paddingRight: 2 }}>demo</span>
-      {seg("ready", engine === "ready", () => setEngine("ready"))}
-      {seg("booting", engine === "booting", () => setEngine("booting"))}
-      {seg("failed", engine === "failed", () => setEngine("failed"))}
-      <span style={{ width: 1, height: 18, background: "var(--border-secondary)" }} />
-      {seg("first run", firstRun, toggleFirstRun)}
-      {seg("update", updateToast, () => setUpdateToast(!updateToast))}
-    </div>
-  );
-}
