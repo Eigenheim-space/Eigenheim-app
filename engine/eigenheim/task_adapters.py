@@ -130,24 +130,24 @@ class JiraAdapter:
         except urllib.error.HTTPError as e:
             if e.code == 401:
                 raise TaskAdapterError(
-                    "Jira: проверка остановлена. Токен отклонён (401). "
-                    "Обнови подключение: Settings → Integrations."
+                    "Jira: check stopped. Token rejected (401). "
+                    "Reconnect: Settings → Integrations."
                 ) from e
             if e.code == 403:
                 raise TaskAdapterError(
-                    "Jira: доступ запрещён (403). Проверь права токена: нужен read:jira-work."
+                    "Jira: access forbidden (403). Check token scopes: read:jira-work is required."
                 ) from e
             raise TaskAdapterError(
-                f"Jira: запрос отклонён ({e.code}). Проверь base_url и project key."
+                f"Jira: request rejected ({e.code}). Check base_url and project key."
             ) from e
         except TaskAdapterError:
             raise
         except Exception as e:
-            raise TaskAdapterError(f"Jira: нет связи с сервером. {e}") from e
+            raise TaskAdapterError(f"Jira: no connection to the server. {e}") from e
         try:
             return json.loads(text)
         except json.JSONDecodeError as e:
-            raise TaskAdapterError(f"Jira: ответ не является JSON. {e}") from e
+            raise TaskAdapterError(f"Jira: response is not JSON. {e}") from e
 
     @staticmethod
     def _normalise(issue: dict) -> dict:
@@ -194,8 +194,8 @@ class JiraAdapter:
         issues = data.get("issues", [])
         if not issues:
             raise TaskAdapterError(
-                f"Jira: проект {self.project_key!r} не вернул задач. "
-                "Проверь project key, JQL-фильтр и права токена."
+                f"Jira: project {self.project_key!r} returned no tasks. "
+                "Check the project key, JQL filter, and token scopes."
             )
         return [self._normalise(i) for i in issues]
 
@@ -236,23 +236,23 @@ class LinearAdapter:
         except urllib.error.HTTPError as e:
             if e.code == 401:
                 raise TaskAdapterError(
-                    "Linear: проверка остановлена. Токен отклонён (401). "
-                    "Обнови подключение: Settings → Integrations."
+                    "Linear: check stopped. Token rejected (401). "
+                    "Reconnect: Settings → Integrations."
                 ) from e
             raise TaskAdapterError(
-                f"Linear: запрос отклонён ({e.code})."
+                f"Linear: request rejected ({e.code})."
             ) from e
         except TaskAdapterError:
             raise
         except Exception as e:
-            raise TaskAdapterError(f"Linear: нет связи с сервером. {e}") from e
+            raise TaskAdapterError(f"Linear: no connection to the server. {e}") from e
         try:
             data = json.loads(text)
         except json.JSONDecodeError as e:
-            raise TaskAdapterError(f"Linear: ответ не является JSON. {e}") from e
+            raise TaskAdapterError(f"Linear: response is not JSON. {e}") from e
         if "errors" in data:
             msgs = "; ".join(e.get("message", str(e)) for e in data["errors"])
-            raise TaskAdapterError(f"Linear: GraphQL ошибка: {msgs}")
+            raise TaskAdapterError(f"Linear: GraphQL error: {msgs}")
         return data.get("data", {})
 
     @staticmethod
@@ -316,7 +316,7 @@ class LinearAdapter:
         nodes = (data.get("issues") or {}).get("nodes", [])
         if not nodes:
             raise TaskAdapterError(
-                "Linear: запрос не вернул задач. "
-                "Проверь team key, фильтр и права токена."
+                "Linear: the query returned no tasks. "
+                "Check the team key, filter, and token scopes."
             )
         return [self._normalise(n) for n in nodes]

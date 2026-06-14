@@ -93,7 +93,7 @@ function ReportCard({ report, onOpen }: { report: Report; onOpen: () => void }) 
         <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{report.metricCount ?? report.metrics.length} metrics</span>
       </div>
       <span style={{ flex: 1 }} />
-      <div className="tnum" style={{ fontSize: 12, color: "var(--text-quaternary)", marginTop: 12 }}>built {report.lastBuilt}</div>
+      <div className="tnum" style={{ fontSize: 12, color: "var(--text-quaternary)", marginTop: 12 }}>{report.lastBuilt ? `built ${report.lastBuilt}` : "not built yet"}</div>
     </div>
   );
 }

@@ -888,7 +888,7 @@ export interface components {
         CollectIn: {
             /**
              * Frequency
-             * @default 24ч
+             * @default 24h
              */
             frequency: string;
         };
@@ -1312,7 +1312,7 @@ export interface components {
             expression: string;
             /**
              * Validated
-             * @default сегодня
+             * @default today
              */
             validated: string;
         };

@@ -54,7 +54,7 @@ def test_cycle_detection():
 def test_snapshot_immutable_across_edit():
     c = _events_conn()
     store_db.seed_defaults(c)
-    service.collect_report(c, "growth", "24ч")
+    service.collect_report(c, "growth", "24h")
     snap1 = store_db.latest_snapshot(c, "growth")
     v1 = snap1["metrics"][0]["value"]
     ver1 = snap1["metrics"][0]["logic_version"]
@@ -71,7 +71,7 @@ def test_snapshot_immutable_across_edit():
 def test_scheduler_recomputes_due():
     c = _events_conn()
     store_db.seed_defaults(c)
-    service.collect_report(c, "growth", "24ч")
+    service.collect_report(c, "growth", "24h")
     before = c.execute("SELECT count(*) FROM snapshots WHERE report_id='growth'").fetchone()[0]
     # nothing due right now
     assert scheduler.tick(c, datetime.now(timezone.utc)) == 0

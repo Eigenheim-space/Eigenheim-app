@@ -37,7 +37,7 @@ class LogicIn(BaseModel):
     fmt: str = "number"
     inputs: list[InputIn]
     expression: str
-    validated: str = "сегодня"
+    validated: str = "today"
 
 
 # ---- Helpers ----
@@ -75,13 +75,13 @@ def create_logic(body: LogicIn, request: Request, authorization: str | None = He
     aliases = {i.alias for i in body.inputs}
     err = dsl.validate(body.expression, aliases)
     if err:
-        raise HTTPException(422, f"выражение невалидно: {err}")
+        raise HTTPException(422, f"expression invalid: {err}")
     lid = body.id or _slug(body.name)
     for i in inputs:
         if i.kind == "logic" and not store_db.get_logic(conn, i.params.get("ref", "")):
-            raise HTTPException(422, f"неизвестная Logic в ссылке: {i.params.get('ref')}")
+            raise HTTPException(422, f"unknown Logic reference: {i.params.get('ref')}")
     if store_db.would_cycle(conn, lid, inputs):
-        raise HTTPException(422, "цикл в зависимостях Logic")
+        raise HTTPException(422, "cycle detected in Logic dependencies")
     lg = store_db.upsert_logic(
         conn, lid, body.name, body.description, body.fmt, inputs, body.expression, body.validated
     )

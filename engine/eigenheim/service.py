@@ -31,7 +31,7 @@ _NAMES: dict[str, str] = {
 # ---- Frequency string → hours mapping ----
 
 _FREQ_HOURS: dict[str, float] = {
-    "1ч": 1, "4ч": 4, "6ч": 6, "12ч": 12, "24ч": 24, "7д": 168,
+    "1h": 1, "4h": 4, "6h": 6, "12h": 12, "24h": 24, "7d": 168,
 }
 
 
@@ -51,9 +51,9 @@ _period = period
 # ---- Snapshot status ----
 
 def _snap_status(snap: dict | None) -> str:
-    """Return 'live', 'stale', or 'mock' for a report based on its latest snapshot."""
+    """Return 'live', 'stale', or 'collecting' for a report based on its latest snapshot."""
     if snap is None:
-        return "mock"
+        return "collecting"
     freq_hours = _FREQ_HOURS.get(snap.get("frequency") or "", 24)
     try:
         collected_at = datetime.fromisoformat(snap["collected_at"]).replace(tzinfo=timezone.utc)

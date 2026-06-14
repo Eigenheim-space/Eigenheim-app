@@ -23,7 +23,7 @@ def _replace_events(conn: sqlite3.Connection, rows: list[tuple[str, str, str]]) 
     # An empty result means the fetch failed or the source is empty; in either
     # case, keeping the last good data beats returning a blank slate.
     if not rows:
-        raise AdapterError("источник не вернул ни одного события")
+        raise AdapterError("source returned no events")
     conn.execute("DELETE FROM events")
     conn.executemany("INSERT INTO events(user_id, name, ts) VALUES (?,?,?)", rows)
     conn.commit()
@@ -67,8 +67,8 @@ def posthog_query(host: str, project_id: str, api_key: str, hogql: str, fetch: F
         text = fetch(url, headers, body)
     except urllib.error.HTTPError as e:  # type: ignore[attr-defined]
         if e.code == 401:
-            raise AdapterError("PostHog adapter: проверка остановлена. Ключ отклонён сервером (401). Проверь ключ в Settings → Data sources.") from e
-        raise AdapterError(f"PostHog adapter: запрос отклонён ({e.code}). Проверь project id и хост.") from e
+            raise AdapterError("PostHog adapter: check stopped. Key rejected (401). Check the key in Settings → Data sources.") from e
+        raise AdapterError(f"PostHog adapter: request rejected ({e.code}). Check project id and host.") from e
     except Exception as e:  # noqa: BLE001
         # Do not echo the raw exception: it may contain the caller-supplied host or
         # connection internals.  Log a safe, controlled message instead.

@@ -11,7 +11,7 @@ export interface TraceStep {
   mono?: boolean;
 }
 export interface WeekRow {
-  week: string; // "Нед 21"
+  week: string; // "Week 21"
   value: string;
   deltaPct?: number | null;
 }
@@ -88,7 +88,7 @@ const weeks = (base: number, suffix = ""): WeekRow[] =>
     const v = base * (1 + i * 0.04 - 0.02);
     const prev = base * (1 + (i - 1) * 0.04 - 0.02);
     return {
-      week: `Нед ${w}`,
+      week: `Week ${w}`,
       value: i === 0 ? `${v.toFixed(0)}${suffix}` : `${v.toFixed(0)}${suffix}`,
       deltaPct: i === 0 ? null : +(((v - prev) / prev) * 100).toFixed(1),
     };
@@ -97,8 +97,8 @@ const weeks = (base: number, suffix = ""): WeekRow[] =>
 export const REPORTS: Report[] = [
   {
     id: "activation",
-    name: "Активация",
-    period: "30д",
+    name: "Activation",
+    period: "30d",
     status: "live",
     lastBuilt: "01 Jun 09:14",
     metrics: [
@@ -111,7 +111,7 @@ export const REPORTS: Report[] = [
       {
         id: "act-d7", name: "D7 retention", value: "41.2%", delta: -1.1,
         spark: spark([44, 43, 43, 42, 42, 41, 41]), status: "stale",
-        note: "формула обновилась", series: [43.8, 43.1, 42.6, 42.0, 41.5, 41.2],
+        note: "formula updated", series: [43.8, 43.1, 42.6, 42.0, 41.5, 41.2],
         weeks: weeks(42, "%"),
         trace: {
           formula: "d7 = unique(active on signup+7d) / unique(signup)",
@@ -145,8 +145,8 @@ export const REPORTS: Report[] = [
   },
   {
     id: "growth",
-    name: "Рост",
-    period: "7д",
+    name: "Growth",
+    period: "7d",
     status: "stale",
     lastBuilt: "30 May 22:00",
     metrics: [
@@ -170,10 +170,10 @@ export const REPORTS: Report[] = [
   },
   {
     id: "revenue",
-    name: "Выручка",
-    period: "30д",
+    name: "Revenue",
+    period: "30d",
     status: "mock",
-    lastBuilt: "не собирался",
+    lastBuilt: "",
     metrics: [
       {
         id: "mrr", name: "MRR", value: "$0", delta: null, spark: spark([1, 2, 2, 3, 4, 5]),
@@ -184,16 +184,16 @@ export const REPORTS: Report[] = [
   },
   {
     id: "funnel",
-    name: "Воронка онбординга",
-    period: "7д",
+    name: "Onboarding funnel",
+    period: "7d",
     status: "collecting",
-    lastBuilt: "собирается…",
+    lastBuilt: "",
     metrics: [],
   },
   {
     id: "quality",
-    name: "Качество данных",
-    period: "30д",
+    name: "Data quality",
+    period: "30d",
     status: "error",
     lastBuilt: "01 Jun 03:11",
     metrics: [],
@@ -201,14 +201,14 @@ export const REPORTS: Report[] = [
 ];
 
 export const EVENTS: EventRow[] = [
-  { id: "e1", name: "signup", origin: "synced", source: "PostHog · prod-eu", description: "Пользователь завершил регистрацию" },
-  { id: "e2", name: "first_report", origin: "synced", source: "PostHog · prod-eu", description: "Создан первый отчёт" },
-  { id: "e3", name: "page_view", origin: "synced", source: "PostHog · prod-eu", description: "Просмотр страницы" },
-  { id: "e4", name: "logic_validated", origin: "custom", source: "вручную", description: "Формула принята пользователем" },
-  { id: "e5", name: "report_collected", origin: "synced", source: "PostHog · prod-eu", description: "Отчёт пересобран" },
-  { id: "e6", name: "mcp_query", origin: "custom", source: "вручную", description: "Агент запросил метрику по MCP" },
-  { id: "e7", name: "data_source_added", origin: "synced", source: "PostHog · prod-eu", description: "Подключён источник данных" },
-  { id: "e8", name: "subscription_started", origin: "custom", source: "вручную", description: "Начата подписка" },
+  { id: "e1", name: "signup", origin: "synced", source: "PostHog · prod-eu", description: "User completed signup" },
+  { id: "e2", name: "first_report", origin: "synced", source: "PostHog · prod-eu", description: "First report created" },
+  { id: "e3", name: "page_view", origin: "synced", source: "PostHog · prod-eu", description: "Page view" },
+  { id: "e4", name: "logic_validated", origin: "custom", source: "manual", description: "Formula accepted by user" },
+  { id: "e5", name: "report_collected", origin: "synced", source: "PostHog · prod-eu", description: "Report rebuilt" },
+  { id: "e6", name: "mcp_query", origin: "custom", source: "manual", description: "Agent queried a metric via MCP" },
+  { id: "e7", name: "data_source_added", origin: "synced", source: "PostHog · prod-eu", description: "Data source connected" },
+  { id: "e8", name: "subscription_started", origin: "custom", source: "manual", description: "Subscription started" },
 ];
 
 export const LOGIC: LogicRow[] = [
@@ -220,18 +220,18 @@ export const LOGIC: LogicRow[] = [
 ];
 
 export const TEMPLATES: Template[] = [
-  { id: "t1", name: "DAU", description: "Уникальные активные за день", expression: "unique(any_event in day)" },
+  { id: "t1", name: "DAU", description: "Unique active users per day", expression: "unique(any_event in day)" },
   { id: "t2", name: "Stickiness", description: "DAU / MAU", expression: "dau / mau" },
-  { id: "t3", name: "Conversion", description: "Доля прошедших шаг", expression: "unique(step_b) / unique(step_a)" },
+  { id: "t3", name: "Conversion", description: "Share completing the step", expression: "unique(step_b) / unique(step_a)" },
 ];
 
 export const SYNCS: SyncRow[] = [
-  { id: "s1", target: "каталог событий", frequency: "каждые 6ч", nextRun: "01 Jun 15:00", lastStatus: "ok", lastRun: "01 Jun 09:00",
-    history: [{ at: "01 Jun 09:00", status: "ok", detail: "184,320 событий · 2.4с" }, { at: "01 Jun 03:00", status: "ok", detail: "184,201 событий · 2.3с" }] },
-  { id: "s2", target: "Активация", frequency: "каждые 24ч", nextRun: "02 Jun 09:00", lastStatus: "ok", lastRun: "01 Jun 09:14",
-    history: [{ at: "01 Jun 09:14", status: "ok", detail: "3 метрики · 184мс" }] },
-  { id: "s3", target: "Качество данных", frequency: "каждые 12ч", nextRun: "01 Jun 15:11", lastStatus: "error", lastRun: "01 Jun 03:11",
-    history: [{ at: "01 Jun 03:11", status: "error", detail: "PostHog adapter: сборка остановлена. Ключ отклонён (401). Проверь ключ в Settings → Data sources." }] },
+  { id: "s1", target: "event catalog", frequency: "every 6h", nextRun: "01 Jun 15:00", lastStatus: "ok", lastRun: "01 Jun 09:00",
+    history: [{ at: "01 Jun 09:00", status: "ok", detail: "184,320 events · 2.4s" }, { at: "01 Jun 03:00", status: "ok", detail: "184,201 events · 2.3s" }] },
+  { id: "s2", target: "Activation", frequency: "every 24h", nextRun: "02 Jun 09:00", lastStatus: "ok", lastRun: "01 Jun 09:14",
+    history: [{ at: "01 Jun 09:14", status: "ok", detail: "3 metrics · 184ms" }] },
+  { id: "s3", target: "Data quality", frequency: "every 12h", nextRun: "01 Jun 15:11", lastStatus: "error", lastRun: "01 Jun 03:11",
+    history: [{ at: "01 Jun 03:11", status: "error", detail: "PostHog adapter: sync stopped. Key rejected (401). Check the key in Settings → Data sources." }] },
 ];
 
 /** Build the MCP config snippet that the user pastes into their agent config.

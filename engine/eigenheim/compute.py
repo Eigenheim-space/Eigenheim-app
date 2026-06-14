@@ -174,7 +174,7 @@ def weekly_series(conn: sqlite3.Connection, logic: Logic, start: str, end: str, 
         wk_end = min(cur + timedelta(days=6, hours=23, minutes=59, seconds=59), e)
         v, _ = compute_value(conn, logic, cur.strftime("%Y-%m-%d %H:%M:%S"), wk_end.strftime("%Y-%m-%d %H:%M:%S"), resolve)
         raw.append(v)
-        weeks.append({"week": f"Нед {_iso_week(cur)}", "_v": v})
+        weeks.append({"week": f"Week {_iso_week(cur)}", "_v": v})
         cur = wk_end + timedelta(seconds=1)
     out = []
     for i, w in enumerate(weeks):

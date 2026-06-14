@@ -155,7 +155,7 @@ class MetricOut(BaseModel):
 class ReportListItem(BaseModel):
     id: str
     name: str
-    period: str        # e.g. "30д"
+    period: str        # e.g. "30d"
     status: str        # "live" | "stale" | "mock" | "collecting" | "error"
     lastBuilt: str
     metricCount: int

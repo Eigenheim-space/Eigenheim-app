@@ -106,18 +106,18 @@ def test_replace_events_aborts_on_empty():
 
 
 def test_snap_status_live_when_fresh():
-    snap = {"collected_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "frequency": "24ч"}
+    snap = {"collected_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "frequency": "24h"}
     assert appmod._snap_status(snap) == "live"
 
 
 def test_snap_status_stale_when_old():
     old = (datetime.now(timezone.utc) - timedelta(hours=50)).strftime("%Y-%m-%d %H:%M:%S")
-    snap = {"collected_at": old, "frequency": "24ч"}
+    snap = {"collected_at": old, "frequency": "24h"}
     assert appmod._snap_status(snap) == "stale"
 
 
-def test_snap_status_mock_when_no_snap():
-    assert appmod._snap_status(None) == "mock"
+def test_snap_status_collecting_when_no_snap():
+    assert appmod._snap_status(None) == "collecting"
 
 
 # ─────────────────────────────────────────────────────────────

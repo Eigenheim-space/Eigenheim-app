@@ -8,6 +8,26 @@ fix. The git tag is the release trigger (in-app auto-update reads the published 
 
 _Nothing yet._
 
+## v0.1.4 — 2026-06-15
+
+English-first, all the way down. The English-first UI decision had only reached the
+renderer nav; the **engine** still emitted Russian strings that surfaced in the
+production UI (report names, the event/metric catalog, sync labels, DSL-validation
+errors, Jira/Linear connect errors, data-source/health messages). Now the whole
+user-facing surface is English.
+
+- Engine catalog + reports API in English: default reports `Activation` / `Growth`,
+  period labels `30d` / `7d`, the seeded event + metric/logic descriptions, and the
+  sample sync labels (`event catalog` / `every 6h`, …).
+- An **unbuilt** report is now `collecting`, never `mock` — the engine no longer emits
+  the demo-only `mock` status anywhere. The report card shows `not built yet` instead
+  of a Russian "built" line when there is no snapshot.
+- DSL formula-validation errors, Jira/Linear connect errors, PostHog adapter errors,
+  the data-quality/health message, and the weekly-table column label (`Week N`) are
+  English.
+- Regenerated the typed API client from the English OpenAPI schema (no stale Russian
+  `@default` annotations). Russian code comments are intentionally kept.
+
 ## v0.1.3 — 2026-06-15
 
 - Harden `report_detail` + metric computation against a tile referencing a deleted/missing

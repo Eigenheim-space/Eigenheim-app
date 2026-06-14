@@ -46,32 +46,32 @@ class Report:
 
 
 EVENTS = [
-    {"name": "signup", "origin": "synced", "source": "PostHog", "description": "Пользователь завершил регистрацию"},
-    {"name": "first_report", "origin": "synced", "source": "PostHog", "description": "Создан первый отчёт"},
-    {"name": "page_view", "origin": "synced", "source": "PostHog", "description": "Просмотр страницы"},
-    {"name": "session_start", "origin": "synced", "source": "PostHog", "description": "Начало сессии"},
+    {"name": "signup", "origin": "synced", "source": "PostHog", "description": "User completed signup"},
+    {"name": "first_report", "origin": "synced", "source": "PostHog", "description": "First report created"},
+    {"name": "page_view", "origin": "synced", "source": "PostHog", "description": "Page view"},
+    {"name": "session_start", "origin": "synced", "source": "PostHog", "description": "Session start"},
 ]
 
 LOGIC: dict[str, Logic] = {
     "activation": Logic(
-        "activation", "activation", "Доля активированных за 7 дней", 3,
+        "activation", "activation", "Share of users activated within 7 days", 3,
         (Input("signups", "unique", {"event": "signup"}),
          Input("activated", "funnel", {"from": "signup", "to": "first_report", "within_days": 7})),
         "ratio(activated, signups)", "percent", "12 Mar 2026",
     ),
     "d7_retention": Logic(
-        "d7_retention", "d7_retention", "Доля вернувшихся на 7-й день", 4,
+        "d7_retention", "d7_retention", "Share of users returning on day 7", 4,
         (Input("signups", "unique", {"event": "signup"}),
          Input("retained", "retained", {"base": "signup", "ret": "session_start", "after_days": 7})),
         "ratio(retained, signups)", "percent", "28 May 2026",
     ),
     "ttv": Logic(
-        "ttv", "ttv", "Медианное время до первого отчёта", 2,
+        "ttv", "ttv", "Median time to first report", 2,
         (Input("gap", "median_gap_days", {"from": "signup", "to": "first_report"}),),
         "gap", "days", "12 Mar 2026",
     ),
     "mau": Logic(
-        "mau", "mau", "Уникальные за скользящие 30 дней", 1,
+        "mau", "mau", "Unique users over a rolling 30 days", 1,
         (Input("m", "mau", {"days": 30}),),
         "m", "number", "02 Apr 2026",
     ),
@@ -79,20 +79,20 @@ LOGIC: dict[str, Logic] = {
 
 # starter templates (needs_validation)
 TEMPLATES = [
-    {"id": "dau", "name": "DAU", "description": "Уникальные активные за день", "expression": "unique(any_event in day)"},
+    {"id": "dau", "name": "DAU", "description": "Unique active users per day", "expression": "unique(any_event in day)"},
     {"id": "stickiness", "name": "Stickiness", "description": "DAU / MAU", "expression": "ratio(dau, mau)"},
-    {"id": "conversion", "name": "Conversion", "description": "Доля прошедших шаг", "expression": "ratio(step_b, step_a)"},
+    {"id": "conversion", "name": "Conversion", "description": "Share completing the step", "expression": "ratio(step_b, step_a)"},
 ]
 
 REPORTS: dict[str, Report] = {
-    "activation": Report("activation", "Активация", 30, ("activation", "d7_retention", "ttv")),
-    "growth": Report("growth", "Рост", 7, ("mau",)),
+    "activation": Report("activation", "Activation", 30, ("activation", "d7_retention", "ttv")),
+    "growth": Report("growth", "Growth", 7, ("mau",)),
 }
 
 SYNCS = [
-    {"id": "s1", "target": "каталог событий", "frequency": "каждые 6ч", "next_run": "01 Jun 15:00", "last_status": "ok", "last_run": "01 Jun 09:00"},
-    {"id": "s2", "target": "Активация", "frequency": "каждые 24ч", "next_run": "02 Jun 09:00", "last_status": "ok", "last_run": "01 Jun 09:14"},
-    {"id": "s3", "target": "Качество данных", "frequency": "каждые 12ч", "next_run": "01 Jun 15:11", "last_status": "error", "last_run": "01 Jun 03:11"},
+    {"id": "s1", "target": "event catalog", "frequency": "every 6h", "next_run": "01 Jun 15:00", "last_status": "ok", "last_run": "01 Jun 09:00"},
+    {"id": "s2", "target": "Activation", "frequency": "every 24h", "next_run": "02 Jun 09:00", "last_status": "ok", "last_run": "01 Jun 09:14"},
+    {"id": "s3", "target": "Data quality", "frequency": "every 12h", "next_run": "01 Jun 15:11", "last_status": "error", "last_run": "01 Jun 03:11"},
 ]
 
 

@@ -875,7 +875,7 @@
               "schema": {
                 "$ref": "#/components/schemas/CollectIn",
                 "default": {
-                  "frequency": "24\u0447"
+                  "frequency": "24h"
                 }
               }
             }
@@ -3565,7 +3565,7 @@
           "frequency": {
             "type": "string",
             "title": "Frequency",
-            "default": "24\u0447"
+            "default": "24h"
           }
         },
         "type": "object",
@@ -4726,7 +4726,7 @@
           "validated": {
             "type": "string",
             "title": "Validated",
-            "default": "\u0441\u0435\u0433\u043e\u0434\u043d\u044f"
+            "default": "today"
           }
         },
         "type": "object",

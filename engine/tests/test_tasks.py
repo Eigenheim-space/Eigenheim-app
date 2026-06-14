@@ -234,7 +234,7 @@ def test_jira_fetch_tasks_empty_raises():
     """An empty issues list must raise TaskAdapterError (stale-gate)."""
     adapter = JiraAdapter("https://myorg.atlassian.net", "ENG")
     fetch = _jira_fixture_fetch(empty_issues=True)
-    with pytest.raises(TaskAdapterError, match="не вернул задач"):
+    with pytest.raises(TaskAdapterError, match="returned no tasks"):
         adapter.fetch_tasks("fixture_token", fetch=fetch)
 
 
@@ -336,7 +336,7 @@ def test_linear_fetch_tasks_returns_normalised():
 
 def test_linear_fetch_tasks_empty_raises():
     adapter = LinearAdapter(team_key="ENG")
-    with pytest.raises(TaskAdapterError, match="не вернул задач"):
+    with pytest.raises(TaskAdapterError, match="returned no tasks"):
         adapter.fetch_tasks("fixture_token", fetch=_linear_fixture_fetch(empty=True))
 
 

@@ -23,7 +23,7 @@ class ReportIn(BaseModel):
 
 
 class CollectIn(BaseModel):
-    frequency: str = "24ч"
+    frequency: str = "24h"
 
 
 # ---- Routes ----
@@ -36,9 +36,9 @@ def reports(request: Request, authorization: str | None = Header(None)):
     for r in store_db.list_report_defs(conn):
         snap = store_db.latest_snapshot(conn, r.id)
         out.append({
-            "id": r.id, "name": r.name, "period": f"{r.period_days}д",
+            "id": r.id, "name": r.name, "period": f"{r.period_days}d",
             "status": _snap_status(snap),
-            "lastBuilt": snap["collected_at"] if snap else "не собирался",
+            "lastBuilt": snap["collected_at"] if snap else "",
             "metricCount": len(r.logic_ids),
         })
     return out
@@ -71,19 +71,19 @@ def report_detail(
             for m in snap["metrics"]
         ]
         return {
-            "id": r.id, "name": r.name, "period": f"{r.period_days}д",
+            "id": r.id, "name": r.name, "period": f"{r.period_days}d",
             "status": status, "lastBuilt": snap["collected_at"], "metrics": metrics,
         }
-    status = "mock" if snap is None else "live"
+    status = "collecting" if snap is None else "live"
     metrics = [
         _metric(conn, store_db.get_logic(conn, lid), period_days)
         for lid in r.logic_ids
         if store_db.get_logic(conn, lid)
     ]
-    period_label = f"{period_days}д" if days is not None else f"{r.period_days}д"
+    period_label = f"{period_days}d" if days is not None else f"{r.period_days}d"
     return {
         "id": r.id, "name": r.name, "period": period_label,
-        "status": status, "lastBuilt": "не собирался", "metrics": metrics,
+        "status": status, "lastBuilt": "", "metrics": metrics,
     }
 
 
@@ -92,7 +92,7 @@ def create_report(body: ReportIn, request: Request, authorization: str | None = 
     _auth(authorization)
     rid = body.id or _slug(body.name)
     r = store_db.create_report(request.app.state.conn, rid, body.name, body.period_days, body.logic_ids)
-    return {"id": r.id, "name": r.name, "period": f"{r.period_days}д"}
+    return {"id": r.id, "name": r.name, "period": f"{r.period_days}d"}
 
 
 @router.post("/reports/{report_id}/collect", response_model=CollectOut)

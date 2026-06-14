@@ -24,7 +24,7 @@ def events(request: Request, authorization: str | None = Header(None)):
     names = {r[0] for r in conn.execute("SELECT DISTINCT name FROM events").fetchall()}
     known = [e for e in EVENTS if e["name"] in names]
     extra = [
-        {"name": n, "origin": "synced", "source": "источник данных", "description": ""}
+        {"name": n, "origin": "synced", "source": "data source", "description": ""}
         for n in names if n not in {e["name"] for e in EVENTS}
     ]
     return known + extra

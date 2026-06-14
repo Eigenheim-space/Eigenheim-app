@@ -57,7 +57,7 @@ def test_seed_and_versioning():
     # editing creates a new immutable version
     lg = store_db.get_logic(c, "ttv")
     v1 = lg.version
-    lg2 = store_db.upsert_logic(c, "ttv", lg.name, lg.description, lg.fmt, lg.inputs, "gap + 1", "сегодня")
+    lg2 = store_db.upsert_logic(c, "ttv", lg.name, lg.description, lg.fmt, lg.inputs, "gap + 1", "today")
     assert lg2.version == v1 + 1
     assert c.execute("SELECT count(*) FROM logic_versions WHERE logic_id='ttv'").fetchone()[0] == 2
     # the new latest reflects the edit; the old version row is untouched
@@ -69,9 +69,9 @@ def test_seed_and_versioning():
 def test_create_report_and_snapshot():
     c = _conn()
     store_db.seed_defaults(c)
-    store_db.create_report(c, "r2", "Мой отчёт", 7, ["mau"])
+    store_db.create_report(c, "r2", "My report", 7, ["mau"])
     assert store_db.get_report_def(c, "r2").logic_ids == ("mau",)
-    sid = store_db.save_snapshot(c, "r2", "2026-05-01 00:00:00", "2026-05-31 23:59:59", "24ч",
+    sid = store_db.save_snapshot(c, "r2", "2026-05-01 00:00:00", "2026-05-31 23:59:59", "24h",
                                  [{"logic_id": "mau", "logic_version": 1, "value": "12 372", "fmt": "number",
                                    "trace": {"result": "12 372"}, "weeks": [], "series": [1, 2]}])
     snap = store_db.latest_snapshot(c, "r2")

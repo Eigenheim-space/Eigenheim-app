@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 from . import service, store_db
 
-_FREQ_HOURS = {"1ч": 1, "4ч": 4, "6ч": 6, "12ч": 12, "24ч": 24, "7д": 168}
+_FREQ_HOURS = {"1h": 1, "4h": 4, "6h": 6, "12h": 12, "24h": 24, "7d": 168}
 
 
 def _parse(ts: str) -> datetime:
@@ -22,7 +22,7 @@ def due_reports(conn: sqlite3.Connection, now: datetime) -> list[tuple[str, str]
         snap = store_db.latest_snapshot(conn, r.id)
         if not snap:
             continue  # never collected -> not on a schedule yet
-        freq = snap["frequency"] or "24ч"
+        freq = snap["frequency"] or "24h"
         if now - _parse(snap["collected_at"]) >= timedelta(hours=_FREQ_HOURS.get(freq, 24)):
             out.append((r.id, freq))
     return out
