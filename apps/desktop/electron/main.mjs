@@ -26,6 +26,10 @@ import http from "node:http";
 const require = createRequire(import.meta.url);
 const secrets = require("./secrets.cjs"); // safeStorage custodian (CJS — needs Electron's require)
 const __dirname = dirname(fileURLToPath(import.meta.url));
+// The packaged package.json "name" is the scoped "@eigenheim/desktop", which would give
+// an ugly userData dir (Application Support/@eigenheim/desktop/). Pin a clean, stable app
+// name early so userData (and the EIGENHEIM_DB path below) land in .../eigenheim/.
+app.setName("eigenheim");
 // In dev: engine lives at repo-root/engine/
 // In packaged: engine source is in extraResources at resourcesPath/engine/
 const ENGINE_DIR = app.isPackaged
@@ -113,6 +117,10 @@ function resolveEngineSpawn() {
       PYTHONPATH: engineSrcParent,
       // Prevent Python from writing .pyc files into the read-only app bundle.
       PYTHONDONTWRITEBYTECODE: "1",
+      // The app bundle's Resources are read-only, so the engine cannot write its
+      // SQLite DB there. Point it at a writable per-user dir; the engine creates +
+      // deterministically seeds the DB on first run and persists it across launches.
+      EIGENHEIM_DB: join(app.getPath("userData"), "eigenheim.db"),
     },
   };
 }

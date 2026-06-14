@@ -5,9 +5,11 @@ product metrics **deterministically**: you validate a formula once, eigenheim re
 it from your analytics sources with **zero LLM calls in the core**, and your AI agents
 read the same numbers over MCP.
 
-> Status: **pre-release**. Source available now under PolyForm Noncommercial. The dev
-> setup below works, but there is no packaged or signed installer yet, you cannot install
-> eigenheim as an end-user today. Follow [eigenheim.space](https://eigenheim.space) for the launch.
+> Status: **pre-release**. Source available now under PolyForm Noncommercial. There is no
+> signed installer yet, but you can build a working app from source on macOS, Windows, or
+> Linux, see [BUILD.md](BUILD.md). The build is unsigned, so your OS will warn that it is
+> from an unidentified developer; BUILD.md covers how to open it anyway. Follow
+> [eigenheim.space](https://eigenheim.space) for the signed-installer launch.
 
 ## Why
 
@@ -40,6 +42,19 @@ cd apps/desktop && npm run dev          # http://localhost:3020
 ```
 
 Engine tests: `cd engine && uv run pytest`.
+
+## Build from source
+
+To package a runnable (unsigned) app for your OS, see **[BUILD.md](BUILD.md)**. Short
+version, run on the OS you want to ship for:
+
+```bash
+cd apps/desktop
+npm install
+npm run build          # the renderer
+npm run bundle-engine  # standalone CPython + locked engine deps -> engine/runtime/
+npm run dist           # installer in apps/desktop/release/
+```
 
 ## Agent (MCP) config
 

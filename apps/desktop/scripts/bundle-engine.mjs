@@ -50,13 +50,12 @@ const RUNTIME_DIR = resolve(ENGINE_DIR, "runtime");
 // python-build-standalone version tag — pin to a known-good release.
 // Check https://github.com/astral-sh/python-build-standalone/releases for updates.
 // Format: YYYYMMDT<HHmmss>Z
-const PBS_TAG = "20250612T1508";
-const PYTHON_VERSION = "3.12.10";
+const PBS_TAG = "20250612";
+const PYTHON_VERSION = "3.12.11";
 
 /**
  * Map a Node.js platform/arch pair to the python-build-standalone asset name.
- * Only the platforms eigenheim targets (macOS arm64/x64, Linux x64).
- * Windows is excluded per the execution plan (no Windows nightly).
+ * Targets: macOS arm64/x64, Linux x64, Windows x64.
  */
 const PLATFORM_MAP = {
   "darwin-arm64": {
@@ -71,9 +70,14 @@ const PLATFORM_MAP = {
     asset: `cpython-${PYTHON_VERSION}+${PBS_TAG}-x86_64-unknown-linux-gnu-install_only.tar.gz`,
     pythonBin: "python/bin/python3",
   },
+  "win-x86_64": {
+    asset: `cpython-${PYTHON_VERSION}+${PBS_TAG}-x86_64-pc-windows-msvc-install_only.tar.gz`,
+    pythonBin: "python/python.exe",
+  },
 };
 
 function hostTriple() {
+  if (process.platform === "win32") return "win-x86_64";
   const plat = process.platform === "darwin" ? "darwin" : "linux";
   const arch = process.arch === "arm64" ? "arm64" : "x86_64";
   return `${plat}-${arch}`;

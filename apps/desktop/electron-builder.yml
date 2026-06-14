@@ -33,11 +33,9 @@ extraResources:
     to: engine/eigenheim
     filter:
       - "**/*.py"
-  # Include the data directory (seed DB, fixtures).
-  - from: ../../engine/data
-    to: engine/data
-    filter:
-      - "**/*"
+  # No seed DB is shipped: the engine creates + deterministically seeds its SQLite
+  # DB on first run in a writable per-user dir (EIGENHEIM_DB, set by main.mjs).
+  # This also keeps the build fresh-clone-safe (engine/data is gitignored).
 
 mac:
   category: public.app-category.developer-tools
