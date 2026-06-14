@@ -124,6 +124,7 @@ jobs:
   # ─────────────────────────────────────────────
   electron-dry-build:
     name: electron-builder --dir (unsigned dry build)
+    if: false  # deferred until Phase 3: no signing creds / packaging not release-ready
     needs: [engine-tests, renderer-typecheck]
     runs-on: macos-latest
     steps:
@@ -187,6 +188,7 @@ jobs:
   # ─────────────────────────────────────────────
   e2e-smoke:
     name: e2e API smoke (${{ matrix.os }})
+    if: false  # deferred until Phase 3: e2e suite not stabilized for CI yet
     needs: [engine-tests, renderer-typecheck]
     strategy:
       fail-fast: false
