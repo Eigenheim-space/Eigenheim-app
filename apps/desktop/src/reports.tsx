@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, ArrowUpRight, ArrowDownRight, ArrowLeft, TrendingUp } from "lucide-react";
+import { Plus, ArrowUpRight, ArrowDownRight, ArrowLeft, TrendingUp, X, Search } from "lucide-react";
 import { useApp } from "./store";
-import { api } from "./api";
+import { api, type ReportCreateOut } from "./api";
 import { type Report, type Metric } from "./data";
-import { Badge, StatusBadge, Button, Segmented, Sparkline, EmptyState, ErrorBanner, Modal, Tooltip } from "./ui";
+import { Badge, StatusBadge, Button, Segmented, Sparkline, EmptyState, ErrorBanner, Modal, Tooltip, Field, Input, Drawer, IconButton } from "./ui";
 import { ChatAffordance } from "./chat/ChatOverlay";
 import { queryKeys, bootstrapQueryFn, reportDetailQueryFn, getReportFromCache, getEngineReportIds, invalidate } from "./queries";
 
@@ -28,12 +28,25 @@ const PERIOD_DAYS: Record<string, number | undefined> = { "7d": 7, "30d": 30, "c
 /* ---------------- Reports grid ---------------- */
 export function ReportsGrid() {
   const openReport = useApp((s) => s.openReport);
+  const setReportDrawer = useApp((s) => s.setReportDrawer);
+  const reportDrawer = useApp((s) => s.reportDrawer);
   const firstRun = useApp((s) => s.firstRun);
   // Bootstrap gives us the live report list; fall back to mock on engine offline.
   const { data: bootstrap } = useQuery({ queryKey: queryKeys.engineBootstrap, queryFn: bootstrapQueryFn, staleTime: 2 * 60 * 1000 });
   const reports: Report[] = (bootstrap?.reports as Report[] | undefined) ?? [];
   if (firstRun) {
-    return <EmptyState line="Create your first report" button={<Button hierarchy="primary" iconLeading={<Plus size={16} />}>Create report</Button>} />;
+    return (
+      <>
+        <EmptyState line="Create your first report" button={<Button hierarchy="primary" iconLeading={<Plus size={16} />} onClick={() => setReportDrawer(true)}>Create report</Button>} />
+        {reportDrawer && (
+          <CreateReportDrawer
+            logics={bootstrap?.logic ?? []}
+            onClose={() => setReportDrawer(false)}
+            onCreated={(id) => { setReportDrawer(false); openReport(id); }}
+          />
+        )}
+      </>
+    );
   }
   return (
     <div className="eh-scroll" style={{ height: "100%", overflowY: "auto", padding: 28 }}>
@@ -44,11 +57,19 @@ export function ReportsGrid() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
         {reports.map((r) => <ReportCard key={r.id} report={r} onOpen={() => openReport(r.id)} />)}
         <button
-          onClick={() => reports[0] && openReport(reports[0].id)}
+          onClick={() => setReportDrawer(true)}
+          aria-label="Create report"
           style={{ ...cardBase, boxShadow: "none", border: "1px dashed var(--border-primary)", background: "transparent", minHeight: 132, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", color: "var(--text-tertiary)" }}>
           <Plus size={20} /><span style={{ fontSize: 14, fontWeight: 600 }}>Create report</span>
         </button>
       </div>
+      {reportDrawer && (
+        <CreateReportDrawer
+          logics={bootstrap?.logic ?? []}
+          onClose={() => setReportDrawer(false)}
+          onCreated={(id) => { setReportDrawer(false); openReport(id); }}
+        />
+      )}
     </div>
   );
 }
@@ -74,6 +95,206 @@ function ReportCard({ report, onOpen }: { report: Report; onOpen: () => void }) 
       <span style={{ flex: 1 }} />
       <div className="tnum" style={{ fontSize: 12, color: "var(--text-quaternary)", marginTop: 12 }}>built {report.lastBuilt}</div>
     </div>
+  );
+}
+
+/* ---------------- Create report drawer ---------------- */
+
+const PERIOD_OPTIONS: { label: string; days: number }[] = [
+  { label: "7d", days: 7 },
+  { label: "30d", days: 30 },
+  { label: "90d", days: 90 },
+  { label: "180d", days: 180 },
+];
+
+interface LogicItem { id: string; name: string; version: string; usage: number; expression: string; badge?: string | null }
+
+function LogicPicker({
+  logics,
+  added,
+  onAdd,
+  onRemove,
+}: {
+  logics: LogicItem[];
+  added: string[];
+  onAdd: (id: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const filtered = logics.filter(
+    (l) => !added.includes(l.id) && l.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (logics.length === 0) {
+    return (
+      <div style={{ border: "1px solid var(--border-secondary)", borderRadius: "var(--radius-md)", padding: "14px 16px" }}>
+        <span style={{ fontSize: 13, color: "var(--text-tertiary)" }}>No Logics yet. Create a Logic in the right panel first.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ position: "relative" }}>
+        <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-quaternary)", pointerEvents: "none" }} />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search formulas…"
+          aria-label="Search Logic formulas"
+          style={{ width: "100%", height: 36, padding: "0 10px 0 32px", fontSize: 13, fontFamily: "var(--font-sans)", color: "var(--text-primary)", background: "var(--color-white)", border: "1px solid var(--border-primary)", borderRadius: "var(--radius-md)", outline: "none", boxSizing: "border-box" }}
+        />
+      </div>
+      {filtered.length > 0 && (
+        <div style={{ border: "1px solid var(--border-secondary)", borderRadius: "var(--radius-md)", overflow: "hidden", maxHeight: 180, overflowY: "auto" }} className="eh-scroll">
+          {filtered.map((l, i) => (
+            <button
+              key={l.id}
+              onClick={() => { onAdd(l.id); setSearch(""); }}
+              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 14px", border: "none", borderTop: i > 0 ? "1px solid var(--border-tertiary)" : "none", background: "transparent", cursor: "pointer", fontFamily: "var(--font-sans)", textAlign: "left" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--gray-50)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</div>
+                <div style={{ fontSize: 11, color: "var(--text-quaternary)", marginTop: 1 }}>{l.expression}</div>
+              </div>
+              <Plus size={14} color="var(--brand-600)" style={{ flexShrink: 0 }} />
+            </button>
+          ))}
+        </div>
+      )}
+      {added.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-quaternary)", marginBottom: 4 }}>
+            Selected ({added.length})
+          </span>
+          {added.map((id) => {
+            const l = logics.find((x) => x.id === id);
+            return (
+              <div key={id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "var(--color-white)", border: "1px solid var(--border-secondary)", borderRadius: "var(--radius-md)" }}>
+                <span style={{ flex: 1, fontSize: 13, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {l?.name ?? id}
+                </span>
+                <button
+                  onClick={() => onRemove(id)}
+                  aria-label={`Remove ${l?.name ?? id}`}
+                  style={{ border: "none", background: "transparent", padding: 2, cursor: "pointer", display: "flex", alignItems: "center" }}
+                >
+                  <X size={14} color="var(--text-quaternary)" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CreateReportDrawer({
+  logics,
+  onClose,
+  onCreated,
+}: {
+  logics: LogicItem[];
+  onClose: () => void;
+  onCreated: (reportId: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const [periodDays, setPeriodDays] = useState(30);
+  const [logicIds, setLogicIds] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const nameErr = !name.trim();
+
+  const handleSave = async () => {
+    if (nameErr) return;
+    setSaving(true); setSaveError(null);
+    try {
+      const result: ReportCreateOut = await api.createReport({
+        name: name.trim(),
+        period_days: periodDays,
+        logic_ids: logicIds,
+      });
+      await Promise.all([invalidate.bootstrap(), invalidate.allReportDetails()]);
+      onCreated(result.id);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Drawer
+      width={480}
+      onClose={onClose}
+      header={
+        <div style={{ display: "flex", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid var(--border-secondary)", flexShrink: 0, background: "var(--color-white)" }}>
+          <span style={{ fontSize: 16, fontWeight: 600 }}>New report</span>
+          <span style={{ flex: 1 }} />
+          <IconButton label="Close" onClick={onClose}><X size={18} /></IconButton>
+        </div>
+      }
+      footer={
+        <div style={{ display: "flex", gap: 10, padding: "14px 20px" }}>
+          <Button
+            hierarchy="primary"
+            style={{ flex: 1 }}
+            disabled={nameErr || saving}
+            onClick={handleSave}
+          >
+            {saving ? "Creating…" : "Create report"}
+          </Button>
+          <Button hierarchy="tertiary" onClick={onClose} disabled={saving}>Cancel</Button>
+        </div>
+      }
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <Field label="Name" error={nameErr && name !== "" ? "Name is required" : undefined}>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Activation · Weekly"
+            autoFocus
+          />
+        </Field>
+
+        <Field label="Period">
+          <Segmented
+            value={String(periodDays)}
+            onChange={(v) => setPeriodDays(Number(v))}
+            options={PERIOD_OPTIONS.map((p) => ({ value: String(p.days), label: p.label }))}
+          />
+        </Field>
+
+        <Field
+          label="Formulas"
+          hint="Logic formulas to include as metric tiles. You can add more after creation."
+        >
+          <LogicPicker
+            logics={logics}
+            added={logicIds}
+            onAdd={(id) => setLogicIds((prev) => [...prev, id])}
+            onRemove={(id) => setLogicIds((prev) => prev.filter((x) => x !== id))}
+          />
+        </Field>
+
+        {saveError && (
+          <ErrorBanner
+            component="Report"
+            process="create stopped"
+            detail={saveError}
+          />
+        )}
+
+        <div style={{ fontSize: 12, color: "var(--text-quaternary)", lineHeight: 1.5, paddingBottom: 4 }}>
+          The report is created empty. Use "Build report" inside the report to populate metric values.
+        </div>
+      </div>
+    </Drawer>
   );
 }
 

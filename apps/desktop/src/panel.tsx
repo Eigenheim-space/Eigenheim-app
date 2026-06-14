@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Plus, Play, Pause, Pencil, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Plus, Play, Pause, Pencil, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { useApp } from "./store";
 import { api } from "./api";
+import { secrets } from "./secrets";
 import { TEMPLATES } from "./data";
 import { Badge, StatusBadge, Button, Field, Input, Drawer, EmptyState, ErrorBanner, IconButton, Tooltip } from "./ui";
 import { queryKeys, bootstrapQueryFn, invalidate, taskFacetsQueryFn } from "./queries";
@@ -47,8 +48,10 @@ export function EventsTab() {
             aria-label="Search events"
             style={{ width: "100%", height: 34, padding: "0 10px 0 32px", fontSize: 13, border: "1px solid var(--border-primary)", borderRadius: 8, outline: "none", background: "var(--color-white)" }} />
         </div>
-        <Tooltip content="Create an event manually (without a source sync)">
-          <Button hierarchy="secondary" size="sm" iconLeading={<Plus size={15} />}>Event</Button>
+        <Tooltip content="Events come from synced sources. Connect a data source in Settings to load the catalog.">
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-quaternary)", padding: "0 4px", whiteSpace: "nowrap" }}>
+            <Plus size={13} /> from sync only
+          </span>
         </Tooltip>
       </PanelHeader>
       <div className="eh-scroll" style={{ overflowY: "auto", flex: 1 }}>
@@ -87,6 +90,7 @@ export function EventsTab() {
 
 export function LogicTab() {
   const setLogicDrawer = useApp((s) => s.setLogicDrawer);
+  const setLogicDrawerSeed = useApp((s) => s.setLogicDrawerSeed);
   const { data: bootstrap } = useQuery({ queryKey: queryKeys.engineBootstrap, queryFn: bootstrapQueryFn, staleTime: 2 * 60 * 1000 });
   const logic = bootstrap?.logic ?? [];
   const noLogic = logic.length === 0;
@@ -137,8 +141,20 @@ export function LogicTab() {
                   </Tooltip>
                   <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 3 }}>{t.description}</div>
                 </div>
-                <Tooltip content="Use this template as a Logic formula and open in the editor">
-                  <Button hierarchy="secondary" size="sm">Use</Button>
+                <Tooltip content="Open this template in the Logic editor pre-filled — save it to create a real formula">
+                  <Button
+                    hierarchy="secondary"
+                    size="sm"
+                    onClick={() => {
+                      // Derive a sensible event name from the template expression.
+                      // Templates may reference event names in their expression; we
+                      // default to "any_event" so the user edits it to match their catalog.
+                      setLogicDrawerSeed({ name: t.name, event: "any_event", expression: t.expression });
+                      setLogicDrawer(true);
+                    }}
+                  >
+                    Use
+                  </Button>
                 </Tooltip>
               </div>
             ))}
@@ -151,10 +167,55 @@ export function LogicTab() {
 
 export function SyncsTab() {
   const setSyncDrawer = useApp((s) => s.setSyncDrawer);
+  const goSettings = useApp((s) => s.goSettings);
   const { data: bootstrap } = useQuery({ queryKey: queryKeys.engineBootstrap, queryFn: bootstrapQueryFn, staleTime: 2 * 60 * 1000 });
   const syncs = bootstrap?.syncs ?? [];
   /* Find the most recent failed sync to surface an inline error */
   const failedSync = syncs.find((s) => s.lastStatus === "error");
+
+  // Per-sync running state: maps sync.id → "idle"|"running"|"error"|"ok"
+  const [runState, setRunState] = useState<Record<string, "idle" | "running" | "ok" | "error">>({});
+  const [runMsg, setRunMsg] = useState<Record<string, string>>({});
+
+  const runSync = useCallback(async (syncId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (runState[syncId] === "running") return;
+    setRunState((prev) => ({ ...prev, [syncId]: "running" }));
+    setRunMsg((prev) => ({ ...prev, [syncId]: "" }));
+    try {
+      // PostHog-backed syncs: pull credentials from the OS keychain via the
+      // secrets bridge, then call /datasources/posthog/sync.
+      const saved = await secrets.listSources().catch(() => []);
+      const source = saved[0]; // take the first saved PostHog source
+      if (!source) {
+        // No saved source — guide the user to connect one.
+        setRunState((prev) => ({ ...prev, [syncId]: "error" }));
+        setRunMsg((prev) => ({
+          ...prev,
+          [syncId]: "No data source connected. Open Settings → Data sources to add one.",
+        }));
+        return;
+      }
+      const key = await secrets.getKey(source.id);
+      if (!key) throw new Error("key unavailable — try saving the source again in Settings");
+      const result = await api.syncPosthog(source.host, source.projectId, key);
+      await invalidate.bootstrap();
+      setRunState((prev) => ({ ...prev, [syncId]: "ok" }));
+      setRunMsg((prev) => ({
+        ...prev,
+        [syncId]: `ingested ${result.ingested.toLocaleString()} events`,
+      }));
+      // Reset after 4 s
+      setTimeout(() => setRunState((prev) => ({ ...prev, [syncId]: "idle" })), 4000);
+    } catch (err) {
+      setRunState((prev) => ({ ...prev, [syncId]: "error" }));
+      setRunMsg((prev) => ({
+        ...prev,
+        [syncId]: err instanceof Error ? err.message : "sync failed",
+      }));
+    }
+  }, [runState]);
+
   return (
     <div data-coach-anchor="syncs-tab" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {failedSync && (
@@ -172,21 +233,77 @@ export function SyncsTab() {
         </div>
       )}
       <div className="eh-scroll" style={{ overflowY: "auto", flex: 1 }}>
-        {syncs.map((s) => (
-          <div key={s.id} tabIndex={0} role="button" onClick={() => setSyncDrawer(s.id)} style={{ padding: "12px 16px", borderBottom: "1px solid var(--border-tertiary)", cursor: "pointer" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", flex: 1 }}>{s.target}</span>
-              {s.lastStatus === "error" ? <StatusBadge kind="error" /> : <Badge tone="success" dot>ok</Badge>}
-              <Tooltip content="Run sync now">
-                <IconButton label="Run sync" onClick={(e) => e.stopPropagation()}><Play size={14} /></IconButton>
-              </Tooltip>
-              <Tooltip content="Pause (until manually resumed)">
-                <IconButton label="Pause" onClick={(e) => e.stopPropagation()}><Pause size={14} /></IconButton>
-              </Tooltip>
+        {syncs.length === 0 && (
+          <EmptyState
+            line="No syncs configured. Connect a data source in Settings."
+            button={
+              <Button hierarchy="secondary" size="sm" onClick={goSettings}>Open Settings</Button>
+            }
+          />
+        )}
+        {syncs.map((s) => {
+          const state = runState[s.id] ?? "idle";
+          const msg = runMsg[s.id] ?? "";
+          return (
+            <div key={s.id} style={{ borderBottom: "1px solid var(--border-tertiary)" }}>
+              <div
+                tabIndex={0}
+                role="button"
+                onClick={() => setSyncDrawer(s.id)}
+                style={{ padding: "12px 16px", cursor: "pointer" }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", flex: 1 }}>{s.target}</span>
+                  {s.lastStatus === "error" ? <StatusBadge kind="error" /> : <Badge tone="success" dot>ok</Badge>}
+                  <Tooltip content="Run sync now — pulls latest events from your connected data source">
+                    <IconButton
+                      label="Run sync"
+                      disabled={state === "running"}
+                      onClick={(e) => void runSync(s.id, e)}
+                    >
+                      {state === "running"
+                        ? <Loader2 size={14} style={{ animation: "eh-spin 0.8s linear infinite" }} />
+                        : <Play size={14} />}
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip content="Pause is not available — syncs run on a fixed schedule. Disconnect the source in Settings to stop them.">
+                    {/* Pause has no engine endpoint — rendered as a non-interactive label to avoid a dead button */}
+                    <span
+                      aria-label="Pause not available"
+                      style={{
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        width: 28, height: 28, borderRadius: 6,
+                        color: "var(--fg-quaternary)", opacity: 0.4, cursor: "not-allowed",
+                      }}
+                    >
+                      <Pause size={14} />
+                    </span>
+                  </Tooltip>
+                </div>
+                <div className="tnum" style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 4 }}>{s.frequency} · next {s.nextRun}</div>
+              </div>
+              {/* Inline run result / error */}
+              {(state === "ok" || state === "error") && msg && (
+                <div style={{
+                  padding: "6px 16px 8px",
+                  fontSize: 12,
+                  color: state === "ok" ? "var(--success-700)" : "var(--error-700)",
+                  display: "flex", alignItems: "center", gap: 6,
+                }}>
+                  {state === "error" && (
+                    <button
+                      style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, color: "var(--brand-700)", marginLeft: "auto" }}
+                      onClick={(e) => { e.stopPropagation(); goSettings(); }}
+                    >
+                      Open Settings
+                    </button>
+                  )}
+                  <span style={{ flex: 1 }}>{msg}</span>
+                </div>
+              )}
             </div>
-            <div className="tnum" style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 4 }}>{s.frequency} · next {s.nextRun}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -195,12 +312,17 @@ export function SyncsTab() {
 /* drawers (rendered at app level) */
 export function LogicDrawer() {
   const open = useApp((s) => s.logicDrawer);
-  const [name, setName] = useState("");
-  const [event, setEvent] = useState("signup");
-  const [expr, setExpr] = useState("n");
+  const seed = useApp((s) => s.logicDrawerSeed);
+  // Seed values are applied only when the drawer first opens (captured in state).
+  const [name, setName] = useState(seed?.name ?? "");
+  const [event, setEvent] = useState(seed?.event ?? "signup");
+  const [expr, setExpr] = useState(seed?.expression ?? "n");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const close = () => useApp.getState().setLogicDrawer(false);
+  const close = () => {
+    useApp.getState().setLogicDrawer(false);
+    useApp.getState().setLogicDrawerSeed(null);
+  };
   if (!open) return null;
   const save = async () => {
     setSaving(true); setError(null);
@@ -214,7 +336,7 @@ export function LogicDrawer() {
     } finally { setSaving(false); }
   };
   return (
-    <Drawer title="New Logic" onClose={close}>
+    <Drawer title={seed ? `Use template: ${seed.name}` : "New Logic"} onClose={close}>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <Field label="Name"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="active_users" /></Field>
         <Field label="Event" hint="input with unique-user aggregation — available as n">

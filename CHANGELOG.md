@@ -6,6 +6,10 @@ fix. The git tag is the release trigger (in-app auto-update reads the published 
 
 ## Unreleased
 
+_Nothing yet._
+
+## v0.1.3 — 2026-06-15
+
 - Harden `report_detail` + metric computation against a tile referencing a deleted/missing
   logic id. Every compute path already skips it (no 500); added regression tests, a
   defense-in-depth guard in `compute_value` (clear error vs a cryptic `NoneType` crash), and
@@ -15,6 +19,25 @@ fix. The git tag is the release trigger (in-app auto-update reads the published 
   shift horizontally to stay on-screen and flip below the trigger when there's no room above,
   with long labels wrapping instead of overflowing. Fixes the clipped "Run sync" / "Pause"
   tooltips near panel edges.
+- Shell layout: the left-rail collapse arrow moved into the header (right of the logo); the
+  right-panel collapse arrow moved to the left of the data tabs; the Events/Logic/Syncs tabs
+  are now icon-only (label in a tooltip + aria-label). Restored the **Chat** entry in the
+  left rail (opens the AI chat). Fixed the logomark SVG (it was double-scaled, rendering
+  shrunken/offset) so it fills its box at any size.
+- Unlocked **Tasks** and **Graph** in the rail so they are reachable (they open their pages
+  with a connect/build flow instead of a dead lock).
+- Made the unlocked + panel surfaces real, no dead no-op controls: **Tasks** has a real
+  Jira/Linear connect flow (`POST /trackers` + key in the OS keychain) with a clean
+  no-tracker empty state and a wired reconnect; **Graph** shows a build flow + a clear
+  "needs the graphify CLI" message instead of a blank/crash; the **Syncs** "Run" action
+  triggers the real PostHog sync (and prompts to connect a source if none), "Pause" is
+  honestly non-interactive (no schedule endpoint); the Events "create" affordance is an
+  honest "from sync only" hint; the MCP/agent setup now shows the correct working stdio
+  config (`eigenheim mcp serve` + `EIGENHEIM_MCP_KEY`) instead of a non-existent HTTP `/mcp`.
+- Create reports: the "Create report" buttons now open a real drawer (name + period + a
+  multi-select of Logic formulas) that calls `POST /reports` and opens the new report. The
+  Logic-library "Use" button now opens the Logic editor prefilled from the template. Removed
+  a report-card menu that had no backend.
 
 ## v0.1.2 — 2026-06-15
 

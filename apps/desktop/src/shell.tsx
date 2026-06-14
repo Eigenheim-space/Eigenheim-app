@@ -1,59 +1,63 @@
 import { useEffect, useRef } from "react";
-import { ChartLine, Settings as SettingsIcon, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRight, Activity, FunctionSquare, RefreshCw, Copy, ListChecks, Lock, Target as TargetIcon, FlaskConical, BookMarked, Network, ListOrdered } from "lucide-react";
+import { ChartLine, Settings as SettingsIcon, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRight, Activity, FunctionSquare, RefreshCw, Copy, ListChecks, Target as TargetIcon, FlaskConical, BookMarked, Network, ListOrdered, MessageCircle } from "lucide-react";
 import { useApp } from "./store";
 import { Ket, IconButton, Tooltip, Button, copyText } from "./ui";
 import { EventsTab, LogicTab, SyncsTab, TasksFacetsTab } from "./panel";
 
 /* ---------------- Left rail ---------------- */
 export function LeftRail() {
-  const { railCollapsed, toggleRail, view, goReports, goSettings, goTasks, goGoals, goHypotheses, goDecisions, goGraph, goRice, graphRunId, trackerCount } = useApp();
+  const { railCollapsed, toggleRail, view, goReports, goSettings, goTasks, goGoals, goHypotheses, goDecisions, goGraph, goRice, openChat, chatOpen } = useApp();
   const w = railCollapsed ? 56 : 208;
-  const tasksLocked = trackerCount === 0;
 
-  const navItem = (active: boolean, icon: React.ReactNode, label: string, onClick: () => void, locked?: boolean) => {
+  const navItem = (active: boolean, icon: React.ReactNode, label: string, onClick: () => void) => {
     const body = (
-      <button onClick={locked ? undefined : onClick} aria-current={active} style={{
+      <button onClick={onClick} aria-current={active} aria-label={label} style={{
         width: "100%", display: "flex", alignItems: "center", gap: 10, minHeight: 44,
         padding: railCollapsed ? 0 : "0 12px", justifyContent: railCollapsed ? "center" : "flex-start",
-        borderRadius: 8, border: "1px solid transparent", cursor: locked ? "default" : "pointer",
+        borderRadius: 8, border: "1px solid transparent", cursor: "pointer",
         background: active ? "var(--surface-active)" : "transparent",
-        color: active ? "var(--text-primary)" : locked ? "var(--text-quaternary)" : "var(--text-tertiary)",
+        color: active ? "var(--text-primary)" : "var(--text-tertiary)",
         fontSize: 14, fontWeight: 600,
-        opacity: locked ? 0.6 : 1,
       }}
-        onMouseEnter={(e) => { if (!active && !locked) e.currentTarget.style.background = "var(--surface-hover)"; }}
+        onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "var(--surface-hover)"; }}
         onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}>
         <span style={{ display: "flex" }}>{icon}</span>
-        {!railCollapsed && <span style={{ flex: 1 }}>{label}</span>}
-        {!railCollapsed && locked && <Lock size={13} color="var(--fg-quaternary)" />}
+        {!railCollapsed && <span style={{ flex: 1, textAlign: "left" }}>{label}</span>}
       </button>
     );
-    const tooltipText = locked ? `${label} — connect Jira or Linear first` : label;
-    return railCollapsed ? <Tooltip content={tooltipText}>{body}</Tooltip> : body;
+    return railCollapsed ? <Tooltip content={label}>{body}</Tooltip> : body;
   };
 
   return (
     <div style={{ width: w, flexShrink: 0, borderRight: "1px solid var(--border-secondary)", background: "var(--surface-secondary)", display: "flex", flexDirection: "column", transition: "width 140ms ease" }}>
-      <div style={{ height: 56, display: "flex", alignItems: "center", gap: 9, padding: railCollapsed ? 0 : "0 14px", justifyContent: railCollapsed ? "center" : "flex-start" }}>
+      {/* Header: logo + (when expanded) the collapse arrow to its right */}
+      <div style={{ height: 56, display: "flex", alignItems: "center", gap: 9, padding: railCollapsed ? 0 : "0 8px 0 14px", justifyContent: railCollapsed ? "center" : "flex-start" }}>
         <Ket size={22} />
-        {!railCollapsed && <span style={{ fontWeight: 600, fontSize: 16, letterSpacing: "-0.01em" }}>eigenheim</span>}
+        {!railCollapsed && <span style={{ fontWeight: 600, fontSize: 16, letterSpacing: "-0.01em", flex: 1 }}>eigenheim</span>}
+        {!railCollapsed && (
+          <Tooltip content="Collapse rail · ⌘B">
+            <IconButton label="Collapse rail" onClick={toggleRail}><PanelLeftClose size={18} /></IconButton>
+          </Tooltip>
+        )}
       </div>
       <div style={{ padding: railCollapsed ? "6px 10px" : "6px 12px", display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
         {navItem(view === "reports" || view === "report", <ChartLine size={18} />, "Reports", goReports)}
-        {navItem(view === "tasks", <ListChecks size={18} />, "Tasks", goTasks, tasksLocked)}
+        {navItem(chatOpen, <MessageCircle size={18} />, "Chat", openChat)}
+        {navItem(view === "tasks", <ListChecks size={18} />, "Tasks", goTasks)}
         {navItem(view === "goals", <TargetIcon size={18} />, "Goals", goGoals)}
         {navItem(view === "rice", <ListOrdered size={18} />, "Prioritization", goRice)}
         {navItem(view === "hypotheses", <FlaskConical size={18} />, "Hypotheses", goHypotheses)}
         {navItem(view === "decisions", <BookMarked size={18} />, "Decisions", goDecisions)}
-        {navItem(view === "graph", <Network size={18} />, "Graph", goGraph, !graphRunId)}
+        {navItem(view === "graph", <Network size={18} />, "Graph", goGraph)}
       </div>
       <div style={{ padding: railCollapsed ? "6px 10px 10px" : "6px 12px 12px", display: "flex", flexDirection: "column", gap: 4, borderTop: "1px solid var(--border-tertiary)" }}>
         {navItem(view === "settings", <SettingsIcon size={18} />, "Settings", goSettings)}
-        <Tooltip content={`${railCollapsed ? "Expand" : "Collapse"} rail · ⌘B`}>
-          <IconButton label="Toggle rail" onClick={toggleRail} style={{ alignSelf: railCollapsed ? "center" : "flex-start" }}>
-            {railCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-          </IconButton>
-        </Tooltip>
+        {/* Expand arrow lives here only while collapsed (no header room); collapse lives in the header */}
+        {railCollapsed && (
+          <Tooltip content="Expand rail · ⌘B">
+            <IconButton label="Expand rail" onClick={toggleRail} style={{ alignSelf: "center" }}><PanelLeftOpen size={18} /></IconButton>
+          </Tooltip>
+        )}
       </div>
     </div>
   );
@@ -107,19 +111,22 @@ export function RightPanel() {
         style={{ position: "absolute", left: -2, top: 0, bottom: 0, width: 4, cursor: "col-resize", zIndex: 2 }}
         onMouseEnter={(e) => (e.currentTarget.style.background = "var(--brand-300)")}
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")} />
-      <div style={{ height: 56, display: "flex", alignItems: "center", padding: "0 8px 0 12px", borderBottom: "1px solid var(--border-secondary)", gap: 2, overflowX: "auto" }}>
+      <div style={{ height: 56, display: "flex", alignItems: "center", padding: "0 8px", borderBottom: "1px solid var(--border-secondary)", gap: 4, overflowX: "auto" }}>
+        {/* Collapse arrow sits to the LEFT of the tab icons */}
+        <Tooltip content="Hide panel · ⌘⇧B"><IconButton label="Hide panel" onClick={toggleRight}><PanelRightClose size={17} /></IconButton></Tooltip>
+        <span style={{ width: 1, height: 20, background: "var(--border-secondary)", flexShrink: 0, margin: "0 2px" }} aria-hidden />
         {tabs.map((t) => {
           const on = rightTab === t.id;
           const Icon = t.icon;
           return (
-            <button key={t.id} role="tab" aria-selected={on} onClick={() => setRightTab(t.id)}
-              style={{ display: "flex", alignItems: "center", gap: 6, height: 32, padding: "0 10px", borderRadius: 7, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, flexShrink: 0, background: on ? "var(--surface-active)" : "transparent", color: on ? "var(--text-primary)" : "var(--text-tertiary)" }}>
-              <Icon size={15} />{t.label}
-            </button>
+            <Tooltip key={t.id} content={t.label}>
+              <button role="tab" aria-selected={on} aria-label={t.label} onClick={() => setRightTab(t.id)}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 32, borderRadius: 7, border: "none", cursor: "pointer", flexShrink: 0, background: on ? "var(--surface-active)" : "transparent", color: on ? "var(--text-primary)" : "var(--text-tertiary)" }}>
+                <Icon size={16} />
+              </button>
+            </Tooltip>
           );
         })}
-        <span style={{ flex: 1 }} />
-        <Tooltip content="Hide panel · ⌘⇧B"><IconButton label="Hide panel" onClick={toggleRight}><PanelRightClose size={17} /></IconButton></Tooltip>
       </div>
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
         {rightTab === "tasks" && inTasksMode && <TasksFacetsTab />}

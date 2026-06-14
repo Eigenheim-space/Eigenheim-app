@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Check, AlertCircle, Trash2, Lock, Copy } from "lucide-react";
 import { useApp, type SettingsSection } from "./store";
-import { api, ENGINE } from "./api";
+import { api } from "./api";
 import { updaterBridge } from "./updater";
 import { secrets, type SavedSource } from "./secrets";
 import { buildMcpConfig } from "./data";
@@ -342,10 +342,7 @@ function AiChat() {
   const [ollamaMsg, setOllamaMsg] = useState("");
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
 
-  // Engine MCP endpoint (for option C). Built from the engine URL the main process
-  // actually bound this launch (the port is probed, not always 8765).
   const engineLive = useApp((s) => s.engineLive);
-  const mcpEndpoint = `${ENGINE}/mcp`;
 
   // Check if cloud key already saved on mount
   useEffect(() => {
@@ -520,30 +517,68 @@ function AiChat() {
         </>
       )}
 
-      {/* Option C — External agent */}
+      {/* Option C — External agent (stdio MCP) */}
       {card(
         <>
-          {cardHeader("External agent · Local to your agent", undefined, chatProvider === "agent")}
+          {cardHeader("External agent · stdio MCP", undefined, chatProvider === "agent")}
           <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 14, lineHeight: 1.5 }}>
-            Your desktop agent reads eigenheim's MCP server and writes back into this chat.
-            Nothing goes to any cloud provider through eigenheim.
+            Your desktop agent (Claude Desktop, Cursor, etc.) connects to eigenheim over stdio,
+            not HTTP. Paste the config below into your agent's MCP settings.
+            The key from API keys authenticates every tool call — nothing goes to any cloud provider.
           </p>
-          <Field label="eigenheim MCP endpoint">
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <Input value={mcpEndpoint} readOnly style={{ flex: 1 }} />
+          <Field
+            label="MCP config (paste into your agent)"
+            hint="The eigenheim CLI must be on your PATH (installed with the app). Create a key in the API keys tab, then paste that key into this config."
+          >
+            <div style={{ position: "relative" }}>
+              <pre style={{
+                margin: 0, padding: "10px 12px",
+                fontFamily: "var(--font-mono)", fontSize: 12, lineHeight: 1.6,
+                color: "var(--text-primary)", background: "var(--gray-50)",
+                border: "1px solid var(--border-secondary)", borderRadius: "var(--radius-md)",
+                overflowX: "auto", whiteSpace: "pre",
+              }}>
+{`{
+  "mcpServers": {
+    "eigenheim": {
+      "command": "eigenheim",
+      "args": ["mcp", "serve"],
+      "env": {
+        "EIGENHEIM_MCP_KEY": "<your key from API keys tab>"
+      }
+    }
+  }
+}`}
+              </pre>
               <button
-                onClick={() => copyText(mcpEndpoint)}
-                aria-label="Copy MCP endpoint"
-                title="Copy"
-                style={{ padding: "0 10px", height: 40, border: "1px solid var(--border-primary)", borderRadius: "var(--radius-md)", background: "var(--color-white)", cursor: "pointer", display: "flex", alignItems: "center" }}
+                onClick={() => copyText(`{
+  "mcpServers": {
+    "eigenheim": {
+      "command": "eigenheim",
+      "args": ["mcp", "serve"],
+      "env": {
+        "EIGENHEIM_MCP_KEY": "<your key from API keys tab>"
+      }
+    }
+  }
+}`)}
+                aria-label="Copy MCP config"
+                title="Copy config"
+                style={{
+                  position: "absolute", top: 8, right: 8,
+                  padding: "4px 8px", border: "1px solid var(--border-primary)",
+                  borderRadius: "var(--radius-sm)", background: "var(--color-white)",
+                  cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+                  fontSize: 12, color: "var(--text-secondary)",
+                }}
               >
-                <Copy size={14} />
+                <Copy size={12} /> Copy
               </button>
             </div>
           </Field>
-          <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <Badge tone={engineLive ? "success" : "neutral"} dot={engineLive}>
-              {engineLive ? "MCP server running" : "Engine offline"}
+              {engineLive ? "MCP server ready" : "Engine offline"}
             </Badge>
             <Button hierarchy="secondary" size="sm" onClick={() => setChatProvider("agent")}>
               Set as default

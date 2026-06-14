@@ -72,6 +72,11 @@ interface AppState {
   setCollect: (v: boolean) => void;
   logicDrawer: boolean;
   setLogicDrawer: (v: boolean) => void;
+  /** When set, LogicDrawer opens prefilled with these values (template "Use" flow). */
+  logicDrawerSeed: { name: string; event: string; expression: string } | null;
+  setLogicDrawerSeed: (seed: { name: string; event: string; expression: string } | null) => void;
+  reportDrawer: boolean;
+  setReportDrawer: (v: boolean) => void;
   syncDrawerId: string | null;
   setSyncDrawer: (id: string | null) => void;
   mcpDrawer: boolean;
@@ -308,6 +313,10 @@ export const useApp = create<AppState>((set, get) => ({
   setCollect: (collectOpen) => set({ collectOpen }),
   logicDrawer: false,
   setLogicDrawer: (logicDrawer) => set({ logicDrawer }),
+  logicDrawerSeed: null,
+  setLogicDrawerSeed: (logicDrawerSeed) => set({ logicDrawerSeed }),
+  reportDrawer: false,
+  setReportDrawer: (reportDrawer) => set({ reportDrawer }),
   syncDrawerId: null,
   setSyncDrawer: (syncDrawerId) => set({ syncDrawerId }),
   mcpDrawer: false,

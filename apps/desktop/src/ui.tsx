@@ -5,13 +5,15 @@ import {
 import { createPortal } from "react-dom";
 import { Check, Copy, X, AlertCircle, AlertTriangle, Info } from "lucide-react";
 
-/* ---------------- logomark (|ψ⟩ ket) ---------------- */
+/* ---------------- logomark (eigenheim forward-mark) ----------------
+   The brand glyph: a rounded bar + chevron, drawn in the 32x32 viewBox so it scales
+   cleanly with `size` (the viewBox maps to width/height — no extra transform, which
+   previously double-scaled the glyph and shrank/offset it). Matches the landing icon.svg. */
 export function Ket({ size = 20, color = "var(--brand-600)" }: { size?: number; color?: string }) {
-  const s = size / 32;
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" style={{ display: "block" }}>
-      <rect x={3} y={6} width={4} height={20} rx={2} fill={color} transform={`scale(${s})`} style={{ transformOrigin: "0 0" }} />
-      <path d={`M11 7 L20 16 L11 25`} stroke={color} strokeWidth={3.6} strokeLinecap="round" strokeLinejoin="round" fill="none" transform={`scale(${s})`} style={{ transformOrigin: "0 0" }} />
+      <rect x={7} y={6} width={4} height={20} rx={2} fill={color} />
+      <path d="M15 7 L24 16 L15 25" stroke={color} strokeWidth={3.6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
     </svg>
   );
 }

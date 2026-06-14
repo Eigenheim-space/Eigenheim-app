@@ -217,8 +217,16 @@ function BuildFlow({ onBuilt }: { onBuilt: (runId: string) => void }) {
       const result = await graphApi.build(path.trim(), infer);
       onBuilt(result.run_id);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(`Graph: build stopped. ${msg}. Check the path and try again.`);
+      const raw = e instanceof Error ? e.message : String(e);
+      // Detect the "graphify not installed" case and surface it directly.
+      if (raw.toLowerCase().includes("graphify is not installed") || raw.toLowerCase().includes("not installed")) {
+        setError(
+          "Graph: build stopped. graphify is not installed on this machine. " +
+          "Install it with: uv tool install graphify"
+        );
+      } else {
+        setError(`Graph: build stopped. ${raw}. Check the path and try again.`);
+      }
     } finally {
       setBuilding(false);
     }

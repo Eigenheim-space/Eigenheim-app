@@ -19,10 +19,12 @@ export type LogicDefinitionListItem = components["schemas"]["LogicDefinitionList
 export type LogicDefinitionOut = components["schemas"]["LogicDefinitionOut"];
 export type ReportListItem   = components["schemas"]["ReportListItem"];
 export type ReportOut        = components["schemas"]["ReportOut"];
+export type ReportCreateOut  = components["schemas"]["ReportCreateOut"];
 export type MetricOut        = components["schemas"]["MetricOut"];
 export type WeekOut          = components["schemas"]["WeekOut"];
 export type CollectOut       = components["schemas"]["CollectOut"];
 export type TrackerOut       = components["schemas"]["TrackerOut"];
+export type TrackerSyncOut   = components["schemas"]["TrackerSyncOut"];
 export type TaskOut          = components["schemas"]["TaskOut"];
 export type TaskFacetsOut    = components["schemas"]["TaskFacetsOut"];
 export type TasksByGoalOut   = components["schemas"]["TasksByGoalOut"];
@@ -122,6 +124,16 @@ export interface LogicPayload {
   expression: string;
 }
 
+export interface ReportPayload {
+  /** optional client-supplied id; engine generates one if omitted */
+  id?: string;
+  name: string;
+  /** number of days the report covers; default 30 */
+  period_days: number;
+  /** logic ids to include as metric tiles */
+  logic_ids: string[];
+}
+
 // ── Core report + event API ───────────────────────────────────────────────────
 
 export const api = {
@@ -134,6 +146,7 @@ export const api = {
   logic: () => get<LogicOut[]>("/logic"),
   syncs: () => get<SyncOut[]>("/syncs"),
   collect: (id: string, frequency: string) => post<CollectOut>(`/reports/${id}/collect`, { frequency }),
+  createReport: (p: ReportPayload) => post<ReportCreateOut>("/reports", p),
   createLogic: (p: LogicPayload) => post<LogicCreateOut>("/logic", p),
   testPosthog: (host: string, projectId: string, apiKey: string) => post<{ ok: boolean; events_visible: number }>("/datasources/posthog/test", { host, project_id: projectId, api_key: apiKey }),
   syncPosthog: (host: string, projectId: string, apiKey: string, days = 30) => post<{ ingested: number }>("/datasources/posthog/sync", { host, project_id: projectId, api_key: apiKey, days }),
@@ -149,6 +162,21 @@ export const api = {
       return r.json() as Promise<{ revoked: string }>;
     }),
   // Task tracker endpoints
+  connectTracker: (p: {
+    tracker: "jira" | "linear";
+    token: string;
+    base_url?: string;
+    project_key?: string;
+  }) => post<TrackerOut>("/trackers", p),
+  syncTracker: (connectionId: string, token: string, opts?: { max_results?: number }) =>
+    post<TrackerSyncOut>(`/trackers/${encodeURIComponent(connectionId)}/sync`, {
+      token, ...opts,
+    }),
+  disconnectTracker: (connectionId: string) =>
+    fetch(ENGINE + `/trackers/${encodeURIComponent(connectionId)}`, { method: "DELETE", headers: authHeaders() }).then(async (r) => {
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error((d as { detail?: string }).detail ?? `${r.status}`); }
+      return r.json() as Promise<{ disconnected: string }>;
+    }),
   trackers: () => get<TrackerOut[]>("/trackers"),
   tasks: (params?: { tracker?: string; status?: string; assignee?: string; logic_id?: string }) => {
     const q = new URLSearchParams();

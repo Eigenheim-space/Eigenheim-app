@@ -22,7 +22,7 @@
  */
 
 import {
-  useState, useMemo, useRef, useEffect,
+  useState, useMemo, useCallback,
   type ReactNode,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { useApp } from "./store";
 import { api, type TaskRow, type TasksByGoalGroup, type TrackerRow } from "./api";
+import { secrets } from "./secrets";
 import { Badge, Button, IconButton, Sparkline, EmptyState, ErrorBanner, Tooltip, Segmented, Drawer } from "./ui";
 import { ChatAffordance } from "./chat/ChatOverlay";
 import { queryKeys, bootstrapQueryFn, trackersQueryFn, tasksQueryFn, tasksByGoalQueryFn, invalidate } from "./queries";
@@ -164,7 +165,10 @@ function ConnectionsHealth({ trackers, onAddTracker }: {
                   </span>
                 </span>
                 {tr.health === "error" && (
-                  <button style={{ border: "none", background: "transparent", padding: "4px 7px", fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, color: "var(--brand-700)", cursor: "pointer", borderRadius: "var(--radius-sm)" }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setOpen(false); onAddTracker(); }}
+                    style={{ border: "none", background: "transparent", padding: "4px 7px", fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, color: "var(--brand-700)", cursor: "pointer", borderRadius: "var(--radius-sm)" }}
+                  >
                     Reconnect
                   </button>
                 )}
@@ -193,36 +197,119 @@ function ConnectionsHealth({ trackers, onAddTracker }: {
 /* Connect flow — 2 cards only (directory cut per council)            */
 /* ------------------------------------------------------------------ */
 
-type ConnectState = "idle" | "pending" | "connected";
+type ConnectState = "idle" | "expanded" | "pending" | "connected" | "error";
 
 interface ConnectCardProps {
-  name: string;
+  name: "Jira" | "Linear";
   description: string;
   state: ConnectState;
-  onConnect: () => void;
+  errorMsg?: string;
+  onConnect: (creds: { token: string; base_url?: string; project_key?: string }) => void;
 }
 
-function ConnectCard({ name, description, state, onConnect }: ConnectCardProps) {
+function ConnectCard({ name, description, state, errorMsg, onConnect }: ConnectCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [token, setToken] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
+  const [projectKey, setProjectKey] = useState("");
+
+  const submit = () => {
+    if (!token.trim()) return;
+    onConnect({ token: token.trim(), base_url: baseUrl.trim() || undefined, project_key: projectKey.trim() || undefined });
+  };
+
+  const showConnectButton = state === "idle" || state === "error";
+  const showForm = expanded && showConnectButton;
+
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
-      background: "var(--color-white)", border: "1px solid var(--border-secondary)",
-      borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-xs)",
+      background: "var(--color-white)", border: `1px solid ${state === "connected" ? "var(--brand-300)" : "var(--border-secondary)"}`,
+      borderRadius: "var(--radius-xl)", boxShadow: "var(--shadow-xs)", overflow: "hidden",
     }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600 }}>{name}</div>
-        <div style={{ fontSize: 12, color: "var(--text-quaternary)", marginTop: 2 }}>{description}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>{name}</div>
+          <div style={{ fontSize: 12, color: "var(--text-quaternary)", marginTop: 2 }}>{description}</div>
+        </div>
+        {state === "connected" && <Badge tone="success" dot>Connected</Badge>}
+        {state === "pending" && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-tertiary)" }}>
+            <Loader2 size={14} style={{ animation: "eh-spin 1s linear infinite" }} />Connecting…
+          </span>
+        )}
+        {showConnectButton && (
+          <Button hierarchy="secondary" size="sm" onClick={() => setExpanded((e) => !e)}>
+            {expanded ? "Cancel" : "Connect"}
+          </Button>
+        )}
       </div>
-      {state === "connected" && (
-        <Badge tone="success" dot>Connected</Badge>
-      )}
-      {state === "pending" && (
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-tertiary)" }}>
-          <Loader2 size={14} style={{ animation: "eh-spin 1s linear infinite" }} />Connecting…
-        </span>
-      )}
-      {state === "idle" && (
-        <Button hierarchy="secondary" size="sm" onClick={onConnect}>Connect</Button>
+
+      {showForm && (
+        <div className="eh-fadein" style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+          {name === "Jira" && (
+            <>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "var(--text-secondary)", marginBottom: 4 }}>
+                  Jira base URL
+                </label>
+                <input
+                  type="url"
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                  placeholder="https://yourorg.atlassian.net"
+                  style={{ width: "100%", boxSizing: "border-box", height: 34, padding: "0 10px", fontSize: 13, fontFamily: "var(--font-mono)", border: "1px solid var(--border-primary)", borderRadius: "var(--radius-md)", outline: "none", background: "var(--surface-primary)", color: "var(--text-primary)" }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "var(--text-secondary)", marginBottom: 4 }}>
+                  Project key <span style={{ color: "var(--text-quaternary)", fontWeight: 400 }}>(optional — leave blank for all projects)</span>
+                </label>
+                <input
+                  type="text"
+                  value={projectKey}
+                  onChange={(e) => setProjectKey(e.target.value)}
+                  placeholder="ENG"
+                  style={{ width: "100%", boxSizing: "border-box", height: 34, padding: "0 10px", fontSize: 13, fontFamily: "var(--font-mono)", border: "1px solid var(--border-primary)", borderRadius: "var(--radius-md)", outline: "none", background: "var(--surface-primary)", color: "var(--text-primary)" }}
+                />
+              </div>
+            </>
+          )}
+          {name === "Linear" && (
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "var(--text-secondary)", marginBottom: 4 }}>
+                Team key <span style={{ color: "var(--text-quaternary)", fontWeight: 400 }}>(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={projectKey}
+                onChange={(e) => setProjectKey(e.target.value)}
+                placeholder="ENG"
+                style={{ width: "100%", boxSizing: "border-box", height: 34, padding: "0 10px", fontSize: 13, fontFamily: "var(--font-mono)", border: "1px solid var(--border-primary)", borderRadius: "var(--radius-md)", outline: "none", background: "var(--surface-primary)", color: "var(--text-primary)" }}
+              />
+            </div>
+          )}
+          <div>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "var(--text-secondary)", marginBottom: 4 }}>
+              API token <span style={{ color: "var(--text-quaternary)", fontWeight: 400 }}>— saved to OS keychain, never logged</span>
+            </label>
+            <input
+              type="password"
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder={name === "Jira" ? "Atlassian API token" : "lin_api_…"}
+              style={{ width: "100%", boxSizing: "border-box", height: 34, padding: "0 10px", fontSize: 13, fontFamily: "var(--font-mono)", border: `1px solid ${state === "error" ? "var(--error-300)" : "var(--border-primary)"}`, borderRadius: "var(--radius-md)", outline: "none", background: "var(--surface-primary)", color: "var(--text-primary)" }}
+            />
+          </div>
+          {state === "error" && errorMsg && (
+            <div style={{ display: "flex", gap: 6, fontSize: 12, color: "var(--error-700)", alignItems: "flex-start" }}>
+              <AlertCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+          <Button hierarchy="primary" size="sm" disabled={!token.trim()} onClick={submit} style={{ alignSelf: "flex-start" }}>
+            Connect
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -231,18 +318,42 @@ function ConnectCard({ name, description, state, onConnect }: ConnectCardProps) 
 export function ConnectFlow({ onConnected }: { onConnected: () => void }) {
   const [jiraState, setJiraState] = useState<ConnectState>("idle");
   const [linearState, setLinearState] = useState<ConnectState>("idle");
+  const [jiraError, setJiraError] = useState("");
+  const [linearError, setLinearError] = useState("");
   const anyConnected = jiraState === "connected" || linearState === "connected";
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  useEffect(() => {
-    return () => { timersRef.current.forEach(clearTimeout); };
+  const handleConnect = useCallback(async (
+    trackerName: "Jira" | "Linear",
+    creds: { token: string; base_url?: string; project_key?: string },
+  ) => {
+    const tracker = trackerName === "Jira" ? "jira" : "linear";
+    const setState = tracker === "jira" ? setJiraState : setLinearState;
+    const setError = tracker === "jira" ? setJiraError : setLinearError;
+
+    setState("pending");
+    setError("");
+    try {
+      const result = await api.connectTracker({
+        tracker,
+        token: creds.token,
+        base_url: creds.base_url,
+        project_key: creds.project_key,
+      });
+      // Persist the token in the OS keychain so Reconnect and future syncs can retrieve it.
+      await secrets.saveSource({
+        id: `tracker:${result.id}`,
+        kind: "tracker",
+        host: tracker,
+        projectId: result.project_key || "",
+        apiKey: creds.token,
+      }).catch(() => {/* keychain unavailable — non-fatal: token entered once */});
+      await invalidate.tasks();
+      setState("connected");
+    } catch (err) {
+      setState("error");
+      setError(err instanceof Error ? err.message : "Connection failed");
+    }
   }, []);
-
-  const simulateConnect = (setter: (s: ConnectState) => void) => {
-    setter("pending");
-    const t = setTimeout(() => { setter("connected"); }, 1800);
-    timersRef.current.push(t);
-  };
 
   return (
     <div className="eh-scroll" style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
@@ -269,13 +380,15 @@ export function ConnectFlow({ onConnected }: { onConnected: () => void }) {
             name="Jira"
             description="Atlassian Cloud — project boards and backlogs"
             state={jiraState}
-            onConnect={() => simulateConnect(setJiraState)}
+            errorMsg={jiraError}
+            onConnect={(creds) => void handleConnect("Jira", creds)}
           />
           <ConnectCard
             name="Linear"
             description="Linear workspaces and teams"
             state={linearState}
-            onConnect={() => simulateConnect(setLinearState)}
+            errorMsg={linearError}
+            onConnect={(creds) => void handleConnect("Linear", creds)}
           />
         </div>
 
