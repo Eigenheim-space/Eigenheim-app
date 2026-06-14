@@ -10,6 +10,11 @@ fix. The git tag is the release trigger (in-app auto-update reads the published 
   logic id. Every compute path already skips it (no 500); added regression tests, a
   defense-in-depth guard in `compute_value` (clear error vs a cryptic `NoneType` crash), and
   a test asserting the seeded default reports reference no missing logic.
+- Tooltips render in a portal on `document.body` (never clipped by an ancestor's
+  `overflow:hidden`, always above modals/drawers) and are clamped to the viewport: they
+  shift horizontally to stay on-screen and flip below the trigger when there's no room above,
+  with long labels wrapping instead of overflowing. Fixes the clipped "Run sync" / "Pause"
+  tooltips near panel edges.
 
 ## v0.1.2 — 2026-06-15
 

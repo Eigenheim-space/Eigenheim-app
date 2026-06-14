@@ -1,7 +1,8 @@
 import {
-  useState, useRef, useCallback, useEffect,
+  useState, useRef, useCallback, useEffect, useLayoutEffect,
   type CSSProperties, type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { Check, Copy, X, AlertCircle, AlertTriangle, Info } from "lucide-react";
 
 /* ---------------- logomark (|ψ⟩ ket) ---------------- */
@@ -181,18 +182,65 @@ export function Snippet({ value, block }: { value: string; block?: boolean }) {
   );
 }
 
-/* ---------------- Tooltip (500ms) ---------------- */
+/* ---------------- Tooltip (500ms) ----------------
+   Rendered in a portal on document.body so it is never clipped by an ancestor's
+   overflow:hidden and always sits above everything (modals/drawers are z<=61).
+   Position is computed from the trigger rect and clamped to the viewport: it shifts
+   horizontally to stay on-screen and flips below the trigger when there's no room
+   above, so a tooltip is always fully visible. */
+const TIP_GAP = 6;
+const TIP_MARGIN = 8;
+
 export function Tooltip({ content, children }: { content: string; children: ReactNode }) {
   const [show, setShow] = useState(false);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const t = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerRef = useRef<HTMLSpanElement>(null);
+  const tipRef = useRef<HTMLSpanElement>(null);
+
+  const open = useCallback(() => setShow(true), []);
+  const close = useCallback(() => { if (t.current) clearTimeout(t.current); setShow(false); setPos(null); }, []);
+
+  // Measure the trigger + rendered tooltip, then clamp/flip into the viewport.
+  useLayoutEffect(() => {
+    if (!show || !triggerRef.current || !tipRef.current) return;
+    const trg = triggerRef.current.getBoundingClientRect();
+    const tip = tipRef.current.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let x = trg.left + trg.width / 2 - tip.width / 2;
+    x = Math.max(TIP_MARGIN, Math.min(x, vw - tip.width - TIP_MARGIN));
+    let y = trg.top - tip.height - TIP_GAP;            // prefer above
+    if (y < TIP_MARGIN) y = trg.bottom + TIP_GAP;       // flip below if clipped at top
+    y = Math.min(y, vh - tip.height - TIP_MARGIN);
+    setPos({ x, y });
+  }, [show, content]);
+
+  // A fixed-position tooltip would drift on scroll/resize; just hide it.
+  useEffect(() => {
+    if (!show) return;
+    const hide = () => close();
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide);
+    return () => { window.removeEventListener("scroll", hide, true); window.removeEventListener("resize", hide); };
+  }, [show, close]);
+
   return (
-    <span style={{ position: "relative", display: "inline-flex" }}
-      onMouseEnter={() => { t.current = setTimeout(() => setShow(true), 500); }}
-      onMouseLeave={() => { if (t.current) clearTimeout(t.current); setShow(false); }}
-      onFocus={() => setShow(true)} onBlur={() => setShow(false)}>
+    <span ref={triggerRef} style={{ display: "inline-flex" }}
+      onMouseEnter={() => { t.current = setTimeout(open, 500); }}
+      onMouseLeave={close}
+      onFocus={open} onBlur={close}>
       {children}
-      {show && (
-        <span role="tooltip" style={{ position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)", background: "var(--gray-900)", color: "#fff", fontSize: 12, lineHeight: "16px", padding: "6px 10px", borderRadius: "var(--radius-tooltip)", whiteSpace: "nowrap", zIndex: 80, pointerEvents: "none", boxShadow: "var(--shadow-lg)" }}>{content}</span>
+      {show && createPortal(
+        <span ref={tipRef} role="tooltip" style={{
+          position: "fixed",
+          left: pos ? pos.x : 0, top: pos ? pos.y : 0,
+          visibility: pos ? "visible" : "hidden", // hide for the pre-measure frame
+          background: "var(--gray-900)", color: "#fff", fontSize: 12, lineHeight: "16px",
+          padding: "6px 10px", borderRadius: "var(--radius-tooltip)",
+          maxWidth: "min(320px, calc(100vw - 16px))", // long labels wrap instead of overflowing
+          zIndex: 1000, pointerEvents: "none", boxShadow: "var(--shadow-lg)",
+        }}>{content}</span>,
+        document.body,
       )}
     </span>
   );
