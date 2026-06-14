@@ -52,7 +52,12 @@ let tokenDir = null;
 
 function ping(port) {
   return new Promise((res) => {
-    const req = http.get({ host: "127.0.0.1", port, path: "/health", timeout: 800 }, (r) => {
+    // /health is gated whenever a session token is configured, so the probe must
+    // authenticate with the token we minted. Without this, the probe gets 401, never
+    // sees 200, and waitForHealth burns its full timeout before the window opens.
+    // sessionToken is null here only in the dev-reuse case (an open engine returns 200).
+    const headers = sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {};
+    const req = http.get({ host: "127.0.0.1", port, path: "/health", timeout: 800, headers }, (r) => {
       r.resume();
       res(r.statusCode === 200);
     });
