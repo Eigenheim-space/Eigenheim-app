@@ -22,6 +22,7 @@ import { randomBytes } from "node:crypto";
 import { tmpdir } from "node:os";
 import { createRequire } from "node:module";
 import http from "node:http";
+import net from "node:net";
 
 const require = createRequire(import.meta.url);
 const secrets = require("./secrets.cjs"); // safeStorage custodian (CJS — needs Electron's require)
@@ -35,7 +36,11 @@ app.setName("eigenheim");
 const ENGINE_DIR = app.isPackaged
   ? resolve(process.resourcesPath, "engine")
   : resolve(__dirname, "../../../engine");
-const ENGINE_PORT = 8765;
+// Preferred starting port for the engine sidecar. NOT a fixed binding: startSidecar
+// probes upward from here for a free port, so a port already taken on the user's
+// machine never blocks startup. The resolved port is handed to the renderer via preload.
+const PREFERRED_PORT = 8765;
+let enginePort = PREFERRED_PORT; // resolved in startSidecar before the engine spawns
 const RENDERER_DEV_URL = "http://localhost:3020";
 
 let sidecar = null;
@@ -45,9 +50,9 @@ let win = null;
 let sessionToken = null;
 let tokenDir = null;
 
-function ping() {
+function ping(port) {
   return new Promise((res) => {
-    const req = http.get({ host: "127.0.0.1", port: ENGINE_PORT, path: "/health", timeout: 800 }, (r) => {
+    const req = http.get({ host: "127.0.0.1", port, path: "/health", timeout: 800 }, (r) => {
       r.resume();
       res(r.statusCode === 200);
     });
@@ -59,10 +64,31 @@ function ping() {
 async function waitForHealth(timeoutMs = 15000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    if (await ping()) return true;
+    if (await ping(enginePort)) return true;
     await new Promise((r) => setTimeout(r, 300));
   }
   return false;
+}
+
+// True if we can bind 127.0.0.1:port right now (i.e. it is currently free).
+function probePort(port) {
+  return new Promise((res) => {
+    const srv = net.createServer();
+    srv.once("error", () => res(false)); // EADDRINUSE / EACCES — treat as taken
+    srv.once("listening", () => srv.close(() => res(true)));
+    srv.listen(port, "127.0.0.1");
+  });
+}
+
+// Walk upward from `start` until a free port is found. Bounded so a fully saturated
+// range fails loudly instead of looping forever. (A tiny TOCTOU window exists between
+// the probe and uvicorn binding; if the engine then fails to come up, waitForHealth
+// reports it rather than hanging.)
+async function findFreePort(start, attempts = 64) {
+  for (let p = start; p < start + attempts; p++) {
+    if (await probePort(p)) return p;
+  }
+  throw new Error(`No free port in [${start}, ${start + attempts}) for the engine sidecar.`);
 }
 
 /**
@@ -82,7 +108,7 @@ function resolveEngineSpawn() {
       args: [
         "run", "--project", ENGINE_DIR,
         "eigenheim", "serve",
-        "--host", "127.0.0.1", "--port", String(ENGINE_PORT), "--log-level", "warning",
+        "--host", "127.0.0.1", "--port", String(enginePort), "--log-level", "warning",
       ],
       cwd: ENGINE_DIR,
     };
@@ -110,7 +136,7 @@ function resolveEngineSpawn() {
     cmd: pythonBin,
     args: [
       "-m", "uvicorn", "eigenheim.app:app",
-      "--host", "127.0.0.1", "--port", String(ENGINE_PORT), "--log-level", "warning",
+      "--host", "127.0.0.1", "--port", String(enginePort), "--log-level", "warning",
     ],
     cwd: engineSrcParent,
     extraEnv: {
@@ -126,7 +152,12 @@ function resolveEngineSpawn() {
 }
 
 async function startSidecar() {
-  if (await ping()) return; // reuse an already-running engine (dev convenience)
+  // Reuse an already-running engine on the preferred port (dev convenience): if a
+  // healthy engine answers /health there, attach to it and skip spawn + token mint.
+  if (await ping(PREFERRED_PORT)) { enginePort = PREFERRED_PORT; return; }
+  // Otherwise pick a free port (PREFERRED_PORT if open, else the next one up) so a
+  // port already taken on the user's machine never blocks startup.
+  enginePort = await findFreePort(PREFERRED_PORT);
   // Mint a token and hand it to the engine via a 0600 file (path in env). The
   // engine reads it once and unlinks it, so the secret never sits in process env
   // or `ps`. This locks the localhost engine to this app instance.
@@ -174,10 +205,15 @@ function createWindow() {
       nodeIntegration: false,
       sandbox: true,
       preload: resolve(__dirname, "preload.cjs"),
-      // The renderer loads only our local bundle (no remote content), so handing
-      // it the session token via contextBridge is safe; it lets api.ts authenticate
-      // to the locked sidecar. Empty when reusing an unauthenticated dev engine.
-      additionalArguments: sessionToken ? [`--eigenheim-token=${sessionToken}`] : [],
+      // The renderer loads only our local bundle (no remote content), so handing it
+      // the session token + resolved engine port via contextBridge is safe; it lets
+      // api.ts authenticate to the locked sidecar on whatever port we picked. The
+      // token is omitted when reusing an unauthenticated dev engine; the port is
+      // always passed so the renderer never assumes a fixed 8765.
+      additionalArguments: [
+        ...(sessionToken ? [`--eigenheim-token=${sessionToken}`] : []),
+        `--eigenheim-port=${enginePort}`,
+      ],
     },
   });
   if (app.isPackaged) win.loadFile(resolve(__dirname, "../dist/index.html"));

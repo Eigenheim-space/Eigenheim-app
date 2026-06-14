@@ -56,7 +56,7 @@ export type Metric = MetricOut;
 // token via window.eigenheim. In the browser (standalone dev) it is absent, so we
 // fall back to the env URL and send no auth header (the dev engine has no token).
 const bridge = typeof window !== "undefined" ? (window as { eigenheim?: { token: string | null; engineUrl: string } }).eigenheim : undefined;
-const ENGINE = bridge?.engineUrl || (import.meta as { env?: Record<string, string> }).env?.VITE_ENGINE_URL || "http://127.0.0.1:8765";
+export const ENGINE = bridge?.engineUrl || (import.meta as { env?: Record<string, string> }).env?.VITE_ENGINE_URL || "http://127.0.0.1:8765";
 
 function authHeaders(base: Record<string, string> = {}): Record<string, string> {
   return bridge?.token ? { ...base, Authorization: `Bearer ${bridge.token}` } : base;

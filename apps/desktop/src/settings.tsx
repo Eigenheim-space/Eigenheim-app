@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Check, AlertCircle, Trash2, Lock, Copy } from "lucide-react";
 import { useApp, type SettingsSection } from "./store";
-import { api } from "./api";
+import { api, ENGINE } from "./api";
 import { secrets, type SavedSource } from "./secrets";
 import { buildMcpConfig } from "./data";
 import { Badge, Button, Field, Input, Select, Segmented, Checkbox, Snippet, Drawer, copyText } from "./ui";
@@ -341,9 +341,10 @@ function AiChat() {
   const [ollamaMsg, setOllamaMsg] = useState("");
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
 
-  // Engine MCP endpoint (for option C)
+  // Engine MCP endpoint (for option C). Built from the engine URL the main process
+  // actually bound this launch (the port is probed, not always 8765).
   const engineLive = useApp((s) => s.engineLive);
-  const mcpEndpoint = "http://localhost:8765/mcp";
+  const mcpEndpoint = `${ENGINE}/mcp`;
 
   // Check if cloud key already saved on mount
   useEffect(() => {

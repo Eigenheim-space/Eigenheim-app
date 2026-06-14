@@ -151,13 +151,13 @@ export function BootState() {
 }
 export function EngineFailure() {
   const restart = useApp((s) => s.restartEngine);
-  const diag = "Engine: start stopped. The sidecar did not respond within 10s (timeout). Check that port 8765 is free and restart.";
+  const diag = "Engine: start stopped. The sidecar did not respond within 10s (timeout). Restart it below, or quit and reopen eigenheim.";
   return (
     <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ maxWidth: 520, width: "100%", border: "1px solid var(--error-300)", background: "var(--error-50)", borderRadius: 12, padding: 24 }}>
         <div style={{ fontSize: 16, fontWeight: 600, color: "var(--error-700)" }}>Engine: start stopped</div>
         <div style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 8, lineHeight: 1.55 }}>
-          The local sidecar did not respond within 10 seconds. Check that port 8765 is free and try again.
+          The local sidecar did not respond within 10 seconds. Restart it below, or quit and reopen eigenheim.
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
           <Button hierarchy="primary" iconLeading={<RefreshCw size={15} />} onClick={restart}>Restart</Button>
