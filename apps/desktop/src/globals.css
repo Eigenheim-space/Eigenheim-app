@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+/* ============================================================
+   eigenheim app — design tokens (light DS, owner decision 2026-06-13).
+   Same token set as the landing; the app is the light DS aesthetic.
+   ============================================================ */
+
+:root {
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Brand (eigenheim green) */
+  --brand-25:#f6fef9; --brand-50:#edfcf2; --brand-100:#d3f8df; --brand-200:#aaf0c4;
+  --brand-300:#73e2a3; --brand-400:#3ccb7f; --brand-500:#16b364; --brand-600:#099250;
+  --brand-700:#087443; --brand-800:#095c37; --brand-900:#084c2e; --brand-950:#052e1c;
+
+  /* Gray */
+  --gray-25:#fcfcfd; --gray-50:#f9fafb; --gray-100:#f2f4f7; --gray-200:#eaecf0;
+  --gray-300:#d0d5dd; --gray-400:#98a2b3; --gray-500:#667085; --gray-600:#475467;
+  --gray-700:#344054; --gray-800:#182230; --gray-900:#101828; --gray-950:#0c111d;
+
+  /* Error / Warning / Success / Blue */
+  --error-25:#fffbfa; --error-50:#fef3f2; --error-100:#fee4e2; --error-300:#fda29b;
+  --error-500:#f04438; --error-600:#d92d20; --error-700:#b42318;
+  --warning-50:#fffaeb; --warning-100:#fef0c7; --warning-300:#fec84b; --warning-500:#f79009; --warning-600:#dc6803; --warning-700:#b54708;
+  --success-50:#ecfdf3; --success-100:#dcfae6; --success-300:#75e0a7; --success-500:#17b26a; --success-600:#079455; --success-700:#067647;
+  --blue-50:#eff8ff; --blue-100:#d1e9ff; --blue-500:#2e90fa; --blue-600:#1570ef; --blue-700:#175cd3;
+
+  /* Semantic: text */
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-700);
+  --text-tertiary: var(--gray-500);
+  --text-quaternary: var(--gray-400);
+  --text-white: var(--color-white);
+  --text-brand: var(--brand-700);
+
+  /* Semantic: surfaces */
+  --surface-primary: var(--color-white);
+  --surface-secondary: var(--gray-50);
+  --surface-tertiary: var(--gray-100);
+  --surface-hover: var(--gray-50);
+  --surface-active: var(--gray-100);
+  --surface-brand: var(--brand-50);
+  --surface-overlay: rgba(12,17,29,0.6);
+
+  /* Semantic: borders */
+  --border-primary: var(--gray-300);
+  --border-secondary: var(--gray-200);
+  --border-tertiary: var(--gray-100);
+  --border-brand: var(--brand-300);
+
+  /* Semantic: foreground icons */
+  --fg-primary: var(--gray-900);
+  --fg-secondary: var(--gray-600);
+  --fg-tertiary: var(--gray-500);
+  --fg-quaternary: var(--gray-400);
+  --fg-brand: var(--brand-600);
+
+  --focus-ring-brand: rgba(9,146,80,0.24);
+
+  /* Overlay scrims — flat (no backdrop-filter) on the light theme */
+  --overlay-scrim: rgba(12,17,29,0.42);
+  --overlay-scrim-heavy: rgba(12,17,29,0.60);
+
+  /* Typography */
+  --font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --weight-regular:400; --weight-medium:500; --weight-semibold:600; --weight-bold:700;
+
+  /* Radius — primitive scale */
+  --radius-xs:4px; --radius-sm:6px; --radius-md:8px; --radius-lg:10px;
+  --radius-xl:12px; --radius-2xl:16px; --radius-3xl:20px; --radius-full:9999px;
+
+  /* Radius — semantic slots (lock these so ported components stay consistent) */
+  --radius-card: var(--radius-xl);    /* report cards, metric cards          */
+  --radius-modal: var(--radius-xl);   /* modal dialogs                        */
+  --radius-drawer: 0px;               /* full-height panels — no radius       */
+  --radius-toast: var(--radius-lg);   /* toast notifications                  */
+  --radius-input: var(--radius-md);   /* text inputs, selects                 */
+  --radius-button: var(--radius-md);  /* buttons (all hierarchies)            */
+  --radius-badge: var(--radius-sm);   /* badges, chips, period labels         */
+  --radius-tooltip: var(--radius-md); /* tooltips                             */
+  --radius-control: var(--radius-md); /* segmented control container          */
+  --radius-tab: var(--radius-sm);     /* tabs inside segmented control        */
+
+  /* Shadows (Untitled UI scale) */
+  --shadow-xs:0px 1px 2px 0px rgba(16,24,40,0.05);
+  --shadow-sm:0px 1px 3px 0px rgba(16,24,40,0.10), 0px 1px 2px -1px rgba(16,24,40,0.10);
+  --shadow-md:0px 4px 8px -2px rgba(16,24,40,0.10), 0px 2px 4px -2px rgba(16,24,40,0.06);
+  --shadow-lg:0px 12px 16px -4px rgba(16,24,40,0.08), 0px 4px 6px -2px rgba(16,24,40,0.03);
+  --shadow-xl:0px 20px 24px -4px rgba(16,24,40,0.08), 0px 8px 8px -4px rgba(16,24,40,0.03);
+  --shadow-2xl:0px 24px 48px -12px rgba(16,24,40,0.18);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--text-primary);
+  background: var(--surface-secondary);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button { font-family: inherit; }
+.tnum { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono); }
+
+/* Focus ring (a11y) on every interactive element */
+:where(button, a, [role="button"], [role="tab"], input, select, textarea):focus-visible {
+  outline: 2px solid var(--brand-600);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+/* Thin scrollbars inside zones */
+.eh-scroll { scrollbar-width: thin; scrollbar-color: var(--gray-300) transparent; }
+.eh-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.eh-scroll::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 999px; border: 3px solid transparent; background-clip: content-box; }
+.eh-scroll::-webkit-scrollbar-thumb:hover { background: var(--gray-400); background-clip: content-box; }
+
+/* Mock hatch overlay (mock vs live must never be confused) */
+.eh-mock-hatch {
+  background-image: repeating-linear-gradient(45deg, var(--gray-200) 0, var(--gray-200) 1px, transparent 1px, transparent 7px);
+}
+
+@keyframes eh-spin { to { transform: rotate(360deg); } }
+@keyframes eh-pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+@keyframes eh-fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes eh-wave { 0% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } 100% { transform: scaleY(0.3); } }
+
+/* 1.8 · three micro-animations — NO motion library, one keyframe token each */
+
+/* MetricCard count-up: animates the value from 0 opacity+slight-up on first real load */
+@keyframes eh-count-up { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* Trace reveal: each stepline node fades in; consumer sets animation-delay inline */
+@keyframes eh-trace-node { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
+
+/* Sync wave resolves: a horizontal bar that collapses left-to-right as items complete.
+   Width is driven by a CSS variable --eh-progress (0–1) set inline on the element. */
+@keyframes eh-sync-resolve { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.eh-fadein { animation: eh-fadein 200ms ease-out both; }
+
+/* Chat overlay (Cmd+K) */
+@keyframes eh-chat-overlay-in {
+  from { opacity: 0; transform: translateX(-50%) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+@keyframes eh-scrim-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.eh-chat-overlay {
+  animation: eh-chat-overlay-in 120ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+.eh-chat-scrim {
+  animation: eh-scrim-in 120ms ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .eh-chat-overlay { animation: none; }
+  .eh-chat-scrim   { animation: none; }
+}
+
+/* Tasks surface */
+.eh-task-row { transition: background 120ms ease; cursor: pointer; }
+
+/* Goals surface */
+.eh-kr-row { transition: background 120ms ease; }
+
+.eh-task-row:hover { background: var(--gray-25); }
+.eh-task-row:hover .eh-chev { opacity: 1; transform: none; }
+
+.eh-chev {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 140ms ease, transform 140ms ease;
+  color: var(--fg-quaternary);
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* Drawer scrim — flat, no blur; suppressed under reduced-motion */
+@keyframes eh-scrim-in { from { opacity: 0; } to { opacity: 1; } }
+.eh-task-scrim {
+  animation: eh-scrim-in 180ms ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .eh-task-scrim { animation: none; }
+}
+
+/* a11y: collapse all three animations (and legacy ones) to instant */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}

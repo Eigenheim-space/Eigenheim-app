@@ -1,0 +1,22 @@
+# graphify ignore — eigenheim
+.env
+.env.*
+!.env.example
+settings.local.json
+*.rtf
+*.pem
+id_rsa
+id_ed25519
+*.sqlite*
+engine/data/
+engine/runtime/
+design-reference/_ds_bundle.js
+design-reference/support.js
+node_modules/
+dist/
+out/
+.venv/
+**/.venv/
+graphify-out/
+__pycache__/
+*.pyc

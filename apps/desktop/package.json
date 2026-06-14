@@ -1,0 +1,50 @@
+{
+  "name": "@eigenheim/desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "eigenheim — deterministic product metrics for PMs",
+  "author": "Nikita Yurtayev",
+  "type": "module",
+  "main": "electron/main.mjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b --noCheck && vite build",
+    "typecheck": "tsc -b",
+    "preview": "vite preview",
+    "electron": "electron electron/main.mjs",
+    "app": "concurrently -k -n vite,electron \"vite\" \"wait-on tcp:127.0.0.1:3020 && electron electron/main.mjs\"",
+    "bundle-engine": "node scripts/bundle-engine.mjs",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "e2e": "playwright test",
+    "gen:schema": "cd ../../engine && uv run python -c \"import json; from eigenheim.app import app; print(json.dumps(app.openapi(), indent=2))\" > ../apps/desktop/openapi.json",
+    "gen:types": "openapi-typescript openapi.json -o src/api.gen.ts",
+    "gen": "npm run gen:schema && npm run gen:types"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "^5",
+    "@fontsource/jetbrains-mono": "^5",
+    "@tanstack/react-query": "^5.101.0",
+    "clsx": "^2",
+    "lucide-react": "^0.460.0",
+    "react": "^19",
+    "react-dom": "^19",
+    "react-force-graph-2d": "1.29.1",
+    "zustand": "^5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@tailwindcss/vite": "^4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "concurrently": "^9",
+    "electron": "^33",
+    "electron-builder": "^26.15.3",
+    "openapi-typescript": "^7.13.0",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vite": "^6",
+    "wait-on": "^8"
+  }
+}

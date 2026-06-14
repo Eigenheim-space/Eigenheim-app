@@ -1,0 +1,75 @@
+# electron-builder — packaging configuration.
+#
+# To build a RUNNABLE unsigned app (for local testing / CI dry-run):
+#   1. Run: node apps/desktop/scripts/bundle-engine.mjs
+#      This fetches python-build-standalone + installs uv-locked deps into engine/runtime/.
+#   2. Run: npm run build (renderer)
+#   3. Run: npx electron-builder --dir (unsigned, no DMG, just the app bundle)
+#
+# Code-signing / notarization: TODO — blocked on owner providing Apple Developer ID.
+# See _claude/STAGE_C.md § "Blocked on owner decisions".
+appId: space.eigenheim.app
+productName: eigenheim
+copyright: © 2026 Nikita Yurtayev
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - electron/**/*
+  - dist/**/*
+
+extraResources:
+  # The bundled Python runtime + engine source + uv-locked site-packages.
+  # Produced by: node apps/desktop/scripts/bundle-engine.mjs
+  # The runtime/ dir is gitignored; it must be present on the build machine.
+  - from: ../../engine/runtime
+    to: engine/runtime
+    filter:
+      - "**/*"
+  # Ship the raw engine source so the bundled interpreter can import eigenheim.*.
+  - from: ../../engine/eigenheim
+    to: engine/eigenheim
+    filter:
+      - "**/*.py"
+  # Include the data directory (seed DB, fixtures).
+  - from: ../../engine/data
+    to: engine/data
+    filter:
+      - "**/*"
+
+mac:
+  category: public.app-category.developer-tools
+  # hardenedRuntime is REQUIRED to notarize; disable-library-validation +
+  # allow-jit are needed so the bundled CPython can load .so extensions.
+  # TODO(signing): set to true once Developer ID is in place.
+  hardenedRuntime: false
+  # TODO(signing): uncomment and fill once Apple Developer ID cert is available.
+  # identity: "Developer ID Application: Nikita Yurtayev (TEAM_ID)"
+  # notarize:
+  #   teamId: "TEAM_ID"
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+
+linux:
+  target: [AppImage]
+  category: Development
+
+win:
+  target: [nsis]
+  # TODO(signing): Windows auto-update disabled until OV certificate is purchased.
+  # See eigenheim-plan/12-install-updates.md § "Подпись: бюджетная правда".
+
+# Auto-update feed (electron-updater reads this).
+# TODO(signing): switch to the live release repo post Phase 3 public flip.
+publish:
+  provider: github
+  owner: Eigenheim-space
+  repo: Eigenheim-app
+  private: true

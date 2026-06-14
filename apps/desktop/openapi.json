@@ -1,0 +1,6315 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "eigenheim engine",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events": {
+      "get": {
+        "summary": "Events",
+        "operationId": "events_events_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventOut"
+                  },
+                  "title": "Response Events Events Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/syncs": {
+      "get": {
+        "summary": "Syncs",
+        "operationId": "syncs_syncs_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SyncOut"
+                  },
+                  "title": "Response Syncs Syncs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logic": {
+      "get": {
+        "summary": "Logic",
+        "operationId": "logic_logic_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LogicOut"
+                  },
+                  "title": "Response Logic Logic Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Logic",
+        "operationId": "create_logic_logic_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogicIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogicCreateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/definitions": {
+      "get": {
+        "summary": "List Definitions",
+        "description": "List the canonical versioned definition of every Logic metric.",
+        "operationId": "list_definitions_definitions_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LogicDefinitionListItem"
+                  },
+                  "title": "Response List Definitions Definitions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/definitions/{logic_id}": {
+      "get": {
+        "summary": "Get Definition",
+        "description": "Get the full versioned definition of one Logic metric.",
+        "operationId": "get_definition_definitions__logic_id__get",
+        "parameters": [
+          {
+            "name": "logic_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Logic Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogicDefinitionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logic/{logic_id}/drafts": {
+      "get": {
+        "summary": "List Logic Drafts",
+        "description": "List all pending draft versions for a Logic metric.",
+        "operationId": "list_logic_drafts_logic__logic_id__drafts_get",
+        "parameters": [
+          {
+            "name": "logic_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Logic Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DraftOut"
+                  },
+                  "title": "Response List Logic Drafts Logic  Logic Id  Drafts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logic/drafts/all": {
+      "get": {
+        "summary": "List All Drafts",
+        "description": "List all pending draft versions across every Logic metric.",
+        "operationId": "list_all_drafts_logic_drafts_all_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DraftOut"
+                  },
+                  "title": "Response List All Drafts Logic Drafts All Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logic/{logic_id}/versions/{version}/promote": {
+      "post": {
+        "summary": "Promote Version",
+        "description": "Promote a draft version of a Logic metric to live (human gate).",
+        "operationId": "promote_version_logic__logic_id__versions__version__promote_post",
+        "parameters": [
+          {
+            "name": "logic_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Logic Id"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Version"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromoteRejectOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logic/{logic_id}/versions/{version}/reject": {
+      "post": {
+        "summary": "Reject Version",
+        "description": "Reject a draft version of a Logic metric (human gate).",
+        "operationId": "reject_version_logic__logic_id__versions__version__reject_post",
+        "parameters": [
+          {
+            "name": "logic_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Logic Id"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Version"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromoteRejectOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/logic/{logic_id}/audit": {
+      "get": {
+        "summary": "Get Logic Audit",
+        "description": "Return the hash-chain audit trail for one Logic metric.",
+        "operationId": "get_logic_audit_logic__logic_id__audit_get",
+        "parameters": [
+          {
+            "name": "logic_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Logic Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEntryOut"
+                  },
+                  "title": "Response Get Logic Audit Logic  Logic Id  Audit Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports": {
+      "get": {
+        "summary": "Reports",
+        "operationId": "reports_reports_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportListItem"
+                  },
+                  "title": "Response Reports Reports Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Report",
+        "operationId": "create_report_reports_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportCreateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/{report_id}": {
+      "get": {
+        "summary": "Report Detail",
+        "operationId": "report_detail_reports__report_id__get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Days"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/{report_id}/collect": {
+      "post": {
+        "summary": "Collect",
+        "operationId": "collect_reports__report_id__collect_post",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectIn",
+                "default": {
+                  "frequency": "24\u0447"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingest/csv": {
+      "post": {
+        "summary": "Ingest Csv",
+        "operationId": "ingest_csv_ingest_csv_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "title": "Text"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/datasources/posthog/test": {
+      "post": {
+        "summary": "Posthog Test",
+        "operationId": "posthog_test_datasources_posthog_test_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PosthogIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PosthogTestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/datasources/posthog/sync": {
+      "post": {
+        "summary": "Posthog Sync",
+        "operationId": "posthog_sync_datasources_posthog_sync_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PosthogIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PosthogSyncOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trackers": {
+      "post": {
+        "summary": "Connect Tracker",
+        "description": "Register a tracker connection after testing the token.",
+        "operationId": "connect_tracker_trackers_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackerConnectIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Trackers",
+        "description": "List all registered tracker connections.",
+        "operationId": "list_trackers_trackers_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TrackerOut"
+                  },
+                  "title": "Response List Trackers Trackers Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trackers/{connection_id}": {
+      "delete": {
+        "summary": "Disconnect Tracker",
+        "description": "Remove a tracker connection. Cached tasks are NOT deleted (stale-gate).",
+        "operationId": "disconnect_tracker_trackers__connection_id__delete",
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerDeleteOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/trackers/{connection_id}/sync": {
+      "post": {
+        "summary": "Sync Tracker",
+        "description": "Trigger a task pull for a registered tracker.",
+        "operationId": "sync_tracker_trackers__connection_id__sync_post",
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connection Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackerSyncIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackerSyncOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks": {
+      "get": {
+        "summary": "List Tasks Endpoint",
+        "description": "List cached tasks with optional filters.",
+        "operationId": "list_tasks_endpoint_tasks_get",
+        "parameters": [
+          {
+            "name": "tracker",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tracker"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "assignee",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assignee"
+            }
+          },
+          {
+            "name": "logic_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Logic Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskOut"
+                  },
+                  "title": "Response List Tasks Endpoint Tasks Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/facets": {
+      "get": {
+        "summary": "Task Facets",
+        "description": "Pre-aggregated facet counts for the right-panel navigator.",
+        "operationId": "task_facets_tasks_facets_get",
+        "parameters": [
+          {
+            "name": "tracker",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tracker"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "assignee",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assignee"
+            }
+          },
+          {
+            "name": "linked_metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Linked Metric"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskFacetsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/by-goal": {
+      "get": {
+        "summary": "Tasks By Goal",
+        "description": "Tasks grouped by their linked metric (the 'By Goals' view).",
+        "operationId": "tasks_by_goal_tasks_by_goal_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TasksByGoalOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/task-links": {
+      "post": {
+        "summary": "Link Task Endpoint",
+        "description": "Link a task to a Logic (eigenheim-native data).",
+        "operationId": "link_task_endpoint_task_links_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskLinkIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskLinkCreateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unlink Task Endpoint",
+        "description": "Remove the link between a task and a Logic.",
+        "operationId": "unlink_task_endpoint_task_links_delete",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskUnlinkIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskUnlinkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/goals": {
+      "get": {
+        "summary": "List Goals",
+        "description": "OKR tree: Objectives with KRs, each KR carrying live value, target,\ncomparison, status, progress, gap, trace_ref, and task_count.",
+        "operationId": "list_goals_goals_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/objectives": {
+      "get": {
+        "summary": "List Objectives Endpoint",
+        "description": "List Objectives (lightweight, no KR computation).",
+        "operationId": "list_objectives_endpoint_objectives_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Period"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ObjectiveSimpleOut"
+                  },
+                  "title": "Response List Objectives Endpoint Objectives Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Objective",
+        "description": "Create an Objective.",
+        "operationId": "create_objective_objectives_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObjectiveIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectiveSimpleOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/objectives/{objective_id}": {
+      "get": {
+        "summary": "Get Objective",
+        "description": "Get one Objective with its KRs (live-computed).",
+        "operationId": "get_objective_objectives__objective_id__get",
+        "parameters": [
+          {
+            "name": "objective_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Objective Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectiveWithKRsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Objective",
+        "description": "Update an Objective's title and/or period.",
+        "operationId": "update_objective_objectives__objective_id__patch",
+        "parameters": [
+          {
+            "name": "objective_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Objective Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObjectiveUpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectiveSimpleOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Objective",
+        "description": "Delete an Objective and all its KRs.",
+        "operationId": "delete_objective_objectives__objective_id__delete",
+        "parameters": [
+          {
+            "name": "objective_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Objective Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/key-results": {
+      "post": {
+        "summary": "Create Key Result",
+        "description": "Create a KR under an Objective.",
+        "operationId": "create_key_result_key_results_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeyResultIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyResultOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/key-results/{kr_id}": {
+      "get": {
+        "summary": "Get Key Result",
+        "description": "Get one KR with live-computed value, status, progress, gap, trace_ref.",
+        "operationId": "get_key_result_key_results__kr_id__get",
+        "parameters": [
+          {
+            "name": "kr_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Kr Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyResultOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Key Result",
+        "description": "Update a KR's fields. Partial update: only supplied fields change.",
+        "operationId": "update_key_result_key_results__kr_id__patch",
+        "parameters": [
+          {
+            "name": "kr_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Kr Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeyResultUpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyResultOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Key Result",
+        "description": "Delete a KR.",
+        "operationId": "delete_key_result_key_results__kr_id__delete",
+        "parameters": [
+          {
+            "name": "kr_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Kr Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hypotheses": {
+      "get": {
+        "summary": "List Hypotheses",
+        "description": "List hypotheses with optional filters.\n\nstatus: proposed | testing | confirmed | rejected (omit = all).\nlogic_id: filter to hypotheses linked to a specific metric (omit = all).",
+        "operationId": "list_hypotheses_hypotheses_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "logic_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Logic Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HypothesisOut"
+                  },
+                  "title": "Response List Hypotheses Hypotheses Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Hypothesis",
+        "description": "Create a hypothesis (human path; source='user', status='proposed').",
+        "operationId": "create_hypothesis_hypotheses_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HypothesisIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HypothesisOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hypotheses/{hyp_id}": {
+      "get": {
+        "summary": "Get Hypothesis",
+        "description": "Get one hypothesis by id.",
+        "operationId": "get_hypothesis_hypotheses__hyp_id__get",
+        "parameters": [
+          {
+            "name": "hyp_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Hyp Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HypothesisOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Hypothesis",
+        "description": "Delete a hypothesis.",
+        "operationId": "delete_hypothesis_hypotheses__hyp_id__delete",
+        "parameters": [
+          {
+            "name": "hyp_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Hyp Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hypotheses/{hyp_id}/status": {
+      "patch": {
+        "summary": "Update Hypothesis Status",
+        "description": "Advance the status of a hypothesis (human-only gate).",
+        "operationId": "update_hypothesis_status_hypotheses__hyp_id__status_patch",
+        "parameters": [
+          {
+            "name": "hyp_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Hyp Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HypothesisStatusIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HypothesisOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/decisions": {
+      "get": {
+        "summary": "List Decisions",
+        "description": "List all decisions, newest first.",
+        "operationId": "list_decisions_decisions_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DecisionListItemOut"
+                  },
+                  "title": "Response List Decisions Decisions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Decision",
+        "description": "Create a decision, optionally capturing the current values of listed metrics.",
+        "operationId": "create_decision_decisions_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/decisions/{decision_id}": {
+      "get": {
+        "summary": "Get Decision",
+        "description": "Get one decision with its full captured metric snapshot.",
+        "operationId": "get_decision_decisions__decision_id__get",
+        "parameters": [
+          {
+            "name": "decision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Decision Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Decision",
+        "description": "Partial update of a decision's title, rationale, or status.",
+        "operationId": "update_decision_decisions__decision_id__patch",
+        "parameters": [
+          {
+            "name": "decision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Decision Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionUpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Decision",
+        "description": "Delete a decision and all its captured metric snapshot rows.",
+        "operationId": "delete_decision_decisions__decision_id__delete",
+        "parameters": [
+          {
+            "name": "decision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Decision Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rice": {
+      "get": {
+        "summary": "List Rice",
+        "description": "List all RICE items sorted by computed score descending.",
+        "operationId": "list_rice_rice_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RiceItemOut"
+                  },
+                  "title": "Response List Rice Rice Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Rice Item",
+        "description": "Create a RICE prioritization item.",
+        "operationId": "create_rice_item_rice_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiceItemIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiceItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rice/{item_id}": {
+      "get": {
+        "summary": "Get Rice Item",
+        "description": "Get one RICE item with its computed score and resolved Reach.",
+        "operationId": "get_rice_item_rice__item_id__get",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiceItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Rice Item",
+        "description": "Partial update of a RICE item. Returns the item with recomputed score.",
+        "operationId": "update_rice_item_rice__item_id__patch",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiceItemUpdateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiceItemOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Rice Item",
+        "description": "Delete a RICE item.",
+        "operationId": "delete_rice_item_rice__item_id__delete",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp-keys": {
+      "post": {
+        "summary": "Create Key",
+        "description": "Create an MCP key. Returns the raw key ONCE; only the HMAC hash is stored.",
+        "operationId": "create_key_mcp_keys_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpKeyIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpKeyCreateOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Keys",
+        "description": "List non-revoked MCP keys (metadata only, no hashes or raw keys).",
+        "operationId": "list_keys_mcp_keys_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/McpKeyOut"
+                  },
+                  "title": "Response List Keys Mcp Keys Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/mcp-keys/{key_id}": {
+      "delete": {
+        "summary": "Revoke Key",
+        "description": "Revoke an MCP key by key_id.",
+        "operationId": "revoke_key_mcp_keys__key_id__delete",
+        "parameters": [
+          {
+            "name": "key_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpKeyRevokeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/graph/build": {
+      "post": {
+        "summary": "Build Graph",
+        "description": "POST /graph/build \u2014 run graphify over a directory and return a run_id.",
+        "operationId": "build_graph_graph_build_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GraphBuildRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraphBuildResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/graph/{run_id}/json": {
+      "get": {
+        "summary": "Get Graph Json",
+        "description": "GET /graph/{run_id}/json \u2014 serve the capped, metric-enriched graph JSON.",
+        "operationId": "get_graph_json_graph__run_id__json_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 30,
+              "title": "Days"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraphResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuditEntryOut": {
+        "properties": {
+          "logic_id": {
+            "type": "string",
+            "title": "Logic Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "actor": {
+            "type": "string",
+            "title": "Actor"
+          },
+          "hash": {
+            "type": "string",
+            "title": "Hash"
+          },
+          "prev_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prev Hash"
+          },
+          "at": {
+            "type": "string",
+            "title": "At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "logic_id",
+          "version",
+          "action",
+          "actor",
+          "hash",
+          "at"
+        ],
+        "title": "AuditEntryOut"
+      },
+      "BoundLogicOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "usage_count": {
+            "type": "integer",
+            "title": "Usage Count"
+          },
+          "current_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Value"
+          },
+          "source_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Name"
+          },
+          "trace_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Ref"
+          },
+          "computed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Computed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "version",
+          "usage_count"
+        ],
+        "title": "BoundLogicOut"
+      },
+      "CollectIn": {
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "title": "Frequency",
+            "default": "24\u0447"
+          }
+        },
+        "type": "object",
+        "title": "CollectIn"
+      },
+      "CollectOut": {
+        "properties": {
+          "snapshot_id": {
+            "type": "integer",
+            "title": "Snapshot Id"
+          },
+          "collected": {
+            "type": "integer",
+            "title": "Collected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "snapshot_id",
+          "collected"
+        ],
+        "title": "CollectOut"
+      },
+      "DecisionIn": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale",
+            "default": ""
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": ""
+          },
+          "metric_logic_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Metric Logic Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "DecisionIn"
+      },
+      "DecisionListItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "rationale",
+          "status",
+          "created_at"
+        ],
+        "title": "DecisionListItemOut"
+      },
+      "DecisionMetricOut": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "decision_id": {
+            "type": "string",
+            "title": "Decision Id"
+          },
+          "logic_id": {
+            "type": "string",
+            "title": "Logic Id"
+          },
+          "captured_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Captured Value"
+          },
+          "trace_ref": {
+            "type": "string",
+            "title": "Trace Ref"
+          },
+          "captured_at": {
+            "type": "string",
+            "title": "Captured At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "decision_id",
+          "logic_id",
+          "trace_ref",
+          "captured_at"
+        ],
+        "title": "DecisionMetricOut"
+      },
+      "DecisionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/DecisionMetricOut"
+            },
+            "type": "array",
+            "title": "Metrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "rationale",
+          "status",
+          "created_at",
+          "metrics"
+        ],
+        "title": "DecisionOut"
+      },
+      "DecisionUpdateIn": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rationale"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "title": "DecisionUpdateIn"
+      },
+      "DeletedOut": {
+        "properties": {
+          "deleted": {
+            "type": "string",
+            "title": "Deleted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted"
+        ],
+        "title": "DeletedOut"
+      },
+      "DraftOut": {
+        "properties": {
+          "logic_id": {
+            "type": "string",
+            "title": "Logic Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "fmt": {
+            "type": "string",
+            "title": "Fmt"
+          },
+          "inputs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Inputs"
+          },
+          "expression": {
+            "type": "string",
+            "title": "Expression"
+          },
+          "validated": {
+            "type": "string",
+            "title": "Validated"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "logic_id",
+          "version",
+          "name",
+          "description",
+          "fmt",
+          "inputs",
+          "expression",
+          "validated",
+          "created_at",
+          "status"
+        ],
+        "title": "DraftOut"
+      },
+      "EventOut": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "origin": {
+            "type": "string",
+            "title": "Origin"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "origin",
+          "source",
+          "description"
+        ],
+        "title": "EventOut"
+      },
+      "GoalsOut": {
+        "properties": {
+          "objectives": {
+            "items": {
+              "$ref": "#/components/schemas/ObjectiveOut"
+            },
+            "type": "array",
+            "title": "Objectives"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period"
+          }
+        },
+        "type": "object",
+        "required": [
+          "objectives"
+        ],
+        "title": "GoalsOut"
+      },
+      "GraphBuildRequest": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "infer": {
+            "type": "boolean",
+            "title": "Infer",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "GraphBuildRequest"
+      },
+      "GraphBuildResponse": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "status",
+          "started_at"
+        ],
+        "title": "GraphBuildResponse"
+      },
+      "GraphEdge": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "target": {
+            "type": "string",
+            "title": "Target"
+          },
+          "relation": {
+            "type": "string",
+            "title": "Relation"
+          },
+          "confidence": {
+            "type": "string",
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "target",
+          "relation",
+          "confidence"
+        ],
+        "title": "GraphEdge"
+      },
+      "GraphNode": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "source_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source File"
+          },
+          "community": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Community"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "trace_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Ref"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "GraphNode"
+      },
+      "GraphResponse": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/GraphNode"
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/GraphEdge"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "built_at": {
+            "type": "string",
+            "title": "Built At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nodes",
+          "edges",
+          "run_id",
+          "built_at"
+        ],
+        "title": "GraphResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "engine": {
+            "type": "string",
+            "title": "Engine"
+          },
+          "events": {
+            "type": "integer",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "engine",
+          "events"
+        ],
+        "title": "HealthOut"
+      },
+      "HypothesisIn": {
+        "properties": {
+          "statement": {
+            "type": "string",
+            "title": "Statement"
+          },
+          "logic_id": {
+            "type": "string",
+            "title": "Logic Id",
+            "default": ""
+          },
+          "evidence": {
+            "type": "string",
+            "title": "Evidence",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "statement"
+        ],
+        "title": "HypothesisIn"
+      },
+      "HypothesisOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "statement": {
+            "type": "string",
+            "title": "Statement"
+          },
+          "logic_id": {
+            "type": "string",
+            "title": "Logic Id"
+          },
+          "evidence": {
+            "type": "string",
+            "title": "Evidence"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "statement",
+          "logic_id",
+          "evidence",
+          "status",
+          "source",
+          "created_at"
+        ],
+        "title": "HypothesisOut"
+      },
+      "HypothesisStatusIn": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "HypothesisStatusIn"
+      },
+      "IngestOut": {
+        "properties": {
+          "ingested": {
+            "type": "integer",
+            "title": "Ingested"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ingested"
+        ],
+        "title": "IngestOut"
+      },
+      "InputIn": {
+        "properties": {
+          "alias": {
+            "type": "string",
+            "title": "Alias"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params"
+          }
+        },
+        "type": "object",
+        "required": [
+          "alias",
+          "kind",
+          "params"
+        ],
+        "title": "InputIn"
+      },
+      "KeyResultIn": {
+        "properties": {
+          "objective_id": {
+            "type": "string",
+            "title": "Objective Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "logic_id": {
+            "type": "string",
+            "title": "Logic Id",
+            "default": ""
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "comparison": {
+            "type": "string",
+            "title": "Comparison",
+            "default": "gte"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "objective_id",
+          "name"
+        ],
+        "title": "KeyResultIn"
+      },
+      "KeyResultOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "objective_id": {
+            "type": "string",
+            "title": "Objective Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "logic_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logic Id"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "comparison": {
+            "type": "string",
+            "title": "Comparison"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "progress": {
+            "type": "number",
+            "title": "Progress"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "live_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Live Value"
+          },
+          "live_raw": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Live Raw"
+          },
+          "trace_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Ref"
+          },
+          "task_count": {
+            "type": "integer",
+            "title": "Task Count"
+          },
+          "logic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoundLogicOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "spark": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Spark"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "objective_id",
+          "name",
+          "comparison",
+          "period",
+          "created_at",
+          "status",
+          "progress",
+          "task_count",
+          "spark"
+        ],
+        "title": "KeyResultOut"
+      },
+      "KeyResultUpdateIn": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "logic_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logic Id"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "comparison": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparison"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period"
+          }
+        },
+        "type": "object",
+        "title": "KeyResultUpdateIn"
+      },
+      "LogicCreateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "expression": {
+            "type": "string",
+            "title": "Expression"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "version",
+          "expression"
+        ],
+        "title": "LogicCreateOut"
+      },
+      "LogicDefinitionListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "expression": {
+            "type": "string",
+            "title": "Expression"
+          },
+          "inputs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Inputs"
+          },
+          "fmt": {
+            "type": "string",
+            "title": "Fmt"
+          },
+          "validated": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validated"
+          },
+          "sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha"
+          },
+          "pending_drafts": {
+            "type": "integer",
+            "title": "Pending Drafts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "version",
+          "expression",
+          "inputs",
+          "fmt",
+          "pending_drafts"
+        ],
+        "title": "LogicDefinitionListItem",
+        "description": "Lightweight definition as returned by GET /definitions (no history)."
+      },
+      "LogicDefinitionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "expression": {
+            "type": "string",
+            "title": "Expression"
+          },
+          "inputs": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Inputs"
+          },
+          "fmt": {
+            "type": "string",
+            "title": "Fmt"
+          },
+          "validated": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validated"
+          },
+          "sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha"
+          },
+          "pending_drafts": {
+            "type": "integer",
+            "title": "Pending Drafts"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/LogicVersionHistoryItem"
+            },
+            "type": "array",
+            "title": "History"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "version",
+          "expression",
+          "inputs",
+          "fmt",
+          "pending_drafts",
+          "history"
+        ],
+        "title": "LogicDefinitionOut",
+        "description": "Full definition as returned by GET /definitions/{id} (includes history)."
+      },
+      "LogicIn": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "fmt": {
+            "type": "string",
+            "title": "Fmt",
+            "default": "number"
+          },
+          "inputs": {
+            "items": {
+              "$ref": "#/components/schemas/InputIn"
+            },
+            "type": "array",
+            "title": "Inputs"
+          },
+          "expression": {
+            "type": "string",
+            "title": "Expression"
+          },
+          "validated": {
+            "type": "string",
+            "title": "Validated",
+            "default": "\u0441\u0435\u0433\u043e\u0434\u043d\u044f"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "inputs",
+          "expression"
+        ],
+        "title": "LogicIn"
+      },
+      "LogicOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "usage": {
+            "type": "integer",
+            "title": "Usage"
+          },
+          "expression": {
+            "type": "string",
+            "title": "Expression"
+          },
+          "badge": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Badge"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "version",
+          "usage",
+          "expression"
+        ],
+        "title": "LogicOut"
+      },
+      "LogicVersionHistoryItem": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "expression": {
+            "type": "string",
+            "title": "Expression"
+          },
+          "validated": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validated"
+          },
+          "sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "status",
+          "expression"
+        ],
+        "title": "LogicVersionHistoryItem"
+      },
+      "McpKeyCreateOut": {
+        "properties": {
+          "key_id": {
+            "type": "string",
+            "title": "Key Id"
+          },
+          "raw_key": {
+            "type": "string",
+            "title": "Raw Key"
+          },
+          "warning": {
+            "type": "string",
+            "title": "Warning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key_id",
+          "raw_key",
+          "warning"
+        ],
+        "title": "McpKeyCreateOut"
+      },
+      "McpKeyIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "scopes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scopes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "McpKeyIn"
+      },
+      "McpKeyOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Scopes"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "scopes",
+          "created_at"
+        ],
+        "title": "McpKeyOut"
+      },
+      "McpKeyRevokeOut": {
+        "properties": {
+          "revoked": {
+            "type": "string",
+            "title": "Revoked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revoked"
+        ],
+        "title": "McpKeyRevokeOut"
+      },
+      "MetricOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta"
+          },
+          "spark": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Spark"
+          },
+          "series": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Series"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "weeks": {
+            "items": {
+              "$ref": "#/components/schemas/WeekOut"
+            },
+            "type": "array",
+            "title": "Weeks"
+          },
+          "trace": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Trace"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "value",
+          "spark",
+          "series",
+          "status",
+          "weeks",
+          "trace"
+        ],
+        "title": "MetricOut"
+      },
+      "MetricSummaryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta"
+          },
+          "spark": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Spark"
+          },
+          "series": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Series"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "weeks": {
+            "items": {
+              "$ref": "#/components/schemas/WeekOut"
+            },
+            "type": "array",
+            "title": "Weeks"
+          },
+          "trace": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Trace"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "spark",
+          "series",
+          "status",
+          "weeks",
+          "trace"
+        ],
+        "title": "MetricSummaryOut"
+      },
+      "ObjectiveIn": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "ObjectiveIn"
+      },
+      "ObjectiveOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "krs": {
+            "items": {
+              "$ref": "#/components/schemas/KeyResultOut"
+            },
+            "type": "array",
+            "title": "Krs"
+          },
+          "on_track_count": {
+            "type": "integer",
+            "title": "On Track Count"
+          },
+          "total_kr_count": {
+            "type": "integer",
+            "title": "Total Kr Count"
+          },
+          "aggregate_progress": {
+            "type": "number",
+            "title": "Aggregate Progress"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "period",
+          "source",
+          "krs",
+          "on_track_count",
+          "total_kr_count",
+          "aggregate_progress"
+        ],
+        "title": "ObjectiveOut"
+      },
+      "ObjectiveSimpleOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "period",
+          "source"
+        ],
+        "title": "ObjectiveSimpleOut",
+        "description": "Lightweight objective returned by GET /objectives (no KR computation)."
+      },
+      "ObjectiveUpdateIn": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period"
+          }
+        },
+        "type": "object",
+        "title": "ObjectiveUpdateIn"
+      },
+      "ObjectiveWithKRsOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "krs": {
+            "items": {
+              "$ref": "#/components/schemas/KeyResultOut"
+            },
+            "type": "array",
+            "title": "Krs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "period",
+          "source",
+          "krs"
+        ],
+        "title": "ObjectiveWithKRsOut",
+        "description": "Single-objective response from GET /objectives/{id}."
+      },
+      "PosthogIn": {
+        "properties": {
+          "host": {
+            "type": "string",
+            "title": "Host",
+            "default": "eu"
+          },
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "api_key": {
+            "type": "string",
+            "title": "Api Key"
+          },
+          "days": {
+            "type": "integer",
+            "title": "Days",
+            "default": 30
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id",
+          "api_key"
+        ],
+        "title": "PosthogIn"
+      },
+      "PosthogSyncOut": {
+        "properties": {
+          "ingested": {
+            "type": "integer",
+            "title": "Ingested"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ingested"
+        ],
+        "title": "PosthogSyncOut"
+      },
+      "PosthogTestOut": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "events_visible": {
+            "type": "integer",
+            "title": "Events Visible"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "events_visible"
+        ],
+        "title": "PosthogTestOut"
+      },
+      "PromoteRejectOut": {
+        "properties": {
+          "logic_id": {
+            "type": "string",
+            "title": "Logic Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "spec_hash": {
+            "type": "string",
+            "title": "Spec Hash"
+          },
+          "audit_hash": {
+            "type": "string",
+            "title": "Audit Hash"
+          }
+        },
+        "type": "object",
+        "required": [
+          "logic_id",
+          "version",
+          "status",
+          "spec_hash",
+          "audit_hash"
+        ],
+        "title": "PromoteRejectOut"
+      },
+      "ReportCreateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "period"
+        ],
+        "title": "ReportCreateOut"
+      },
+      "ReportIn": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "period_days": {
+            "type": "integer",
+            "title": "Period Days",
+            "default": 30
+          },
+          "logic_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Logic Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "logic_ids"
+        ],
+        "title": "ReportIn"
+      },
+      "ReportListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "lastBuilt": {
+            "type": "string",
+            "title": "Lastbuilt"
+          },
+          "metricCount": {
+            "type": "integer",
+            "title": "Metriccount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "period",
+          "status",
+          "lastBuilt",
+          "metricCount"
+        ],
+        "title": "ReportListItem"
+      },
+      "ReportOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "lastBuilt": {
+            "type": "string",
+            "title": "Lastbuilt"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricOut"
+            },
+            "type": "array",
+            "title": "Metrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "period",
+          "status",
+          "lastBuilt",
+          "metrics"
+        ],
+        "title": "ReportOut"
+      },
+      "RiceItemIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "reach_logic_id": {
+            "type": "string",
+            "title": "Reach Logic Id",
+            "default": ""
+          },
+          "reach_manual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach Manual"
+          },
+          "impact": {
+            "type": "number",
+            "title": "Impact",
+            "default": 1.0
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence",
+            "default": 1.0
+          },
+          "effort": {
+            "type": "number",
+            "title": "Effort",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "RiceItemIn"
+      },
+      "RiceItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "reach_logic_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach Logic Id"
+          },
+          "reach_manual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach Manual"
+          },
+          "impact": {
+            "type": "number",
+            "title": "Impact"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "effort": {
+            "type": "number",
+            "title": "Effort"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "reach_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach Value"
+          },
+          "reach_trace_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach Trace Ref"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "impact",
+          "confidence",
+          "effort",
+          "source",
+          "created_at",
+          "status"
+        ],
+        "title": "RiceItemOut",
+        "description": "RICE item as returned by the compute layer.\n\nFields are the raw store columns plus the computed fields added by\nrice.compute_rice_item. Note: the renderer's api.ts has extra fields\n(reach_stale, reach_source, last_known_score, trace_ref) that do NOT\nexist in the engine \u2014 those are a renderer-side contract drift, fixed in\napi.ts to align with this model."
+      },
+      "RiceItemUpdateIn": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "reach_logic_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach Logic Id"
+          },
+          "reach_manual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reach Manual"
+          },
+          "impact": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impact"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "effort": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effort"
+          }
+        },
+        "type": "object",
+        "title": "RiceItemUpdateIn"
+      },
+      "SyncHistoryItem": {
+        "properties": {
+          "at": {
+            "type": "string",
+            "title": "At"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "at",
+          "status",
+          "detail"
+        ],
+        "title": "SyncHistoryItem"
+      },
+      "SyncOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "target": {
+            "type": "string",
+            "title": "Target"
+          },
+          "frequency": {
+            "type": "string",
+            "title": "Frequency"
+          },
+          "nextRun": {
+            "type": "string",
+            "title": "Nextrun"
+          },
+          "lastStatus": {
+            "type": "string",
+            "title": "Laststatus"
+          },
+          "lastRun": {
+            "type": "string",
+            "title": "Lastrun"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/SyncHistoryItem"
+            },
+            "type": "array",
+            "title": "History",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "target",
+          "frequency",
+          "nextRun",
+          "lastStatus",
+          "lastRun"
+        ],
+        "title": "SyncOut"
+      },
+      "TaskFacetsOut": {
+        "properties": {
+          "status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Status"
+          },
+          "source": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Source"
+          },
+          "assignee": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Assignee"
+          },
+          "goal": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Goal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "source",
+          "assignee",
+          "goal"
+        ],
+        "title": "TaskFacetsOut"
+      },
+      "TaskLinkCreateOut": {
+        "properties": {
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "tracker": {
+            "type": "string",
+            "title": "Tracker"
+          },
+          "logic_id": {
+            "type": "string",
+            "title": "Logic Id"
+          },
+          "okr_ref": {
+            "type": "string",
+            "title": "Okr Ref"
+          },
+          "kr_ref": {
+            "type": "string",
+            "title": "Kr Ref"
+          }
+        },
+        "type": "object",
+        "required": [
+          "external_id",
+          "tracker",
+          "logic_id",
+          "okr_ref",
+          "kr_ref"
+        ],
+        "title": "TaskLinkCreateOut"
+      },
+      "TaskLinkIn": {
+        "properties": {
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "tracker": {
+            "type": "string",
+            "title": "Tracker"
+          },
+          "logic_id": {
+            "type": "string",
+            "title": "Logic Id"
+          },
+          "okr_ref": {
+            "type": "string",
+            "title": "Okr Ref",
+            "default": ""
+          },
+          "kr_ref": {
+            "type": "string",
+            "title": "Kr Ref",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "external_id",
+          "tracker",
+          "logic_id"
+        ],
+        "title": "TaskLinkIn"
+      },
+      "TaskLinkOut": {
+        "properties": {
+          "logic_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Logic Id"
+          },
+          "okr_ref": {
+            "type": "string",
+            "title": "Okr Ref"
+          },
+          "kr_ref": {
+            "type": "string",
+            "title": "Kr Ref"
+          }
+        },
+        "type": "object",
+        "required": [
+          "okr_ref",
+          "kr_ref"
+        ],
+        "title": "TaskLinkOut"
+      },
+      "TaskOut": {
+        "properties": {
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "tracker": {
+            "type": "string",
+            "title": "Tracker"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TaskLinkOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "external_id",
+          "tracker",
+          "title",
+          "status"
+        ],
+        "title": "TaskOut"
+      },
+      "TaskUnlinkIn": {
+        "properties": {
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "tracker": {
+            "type": "string",
+            "title": "Tracker"
+          },
+          "logic_id": {
+            "type": "string",
+            "title": "Logic Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "external_id",
+          "tracker",
+          "logic_id"
+        ],
+        "title": "TaskUnlinkIn"
+      },
+      "TaskUnlinkOut": {
+        "properties": {
+          "unlinked": {
+            "type": "boolean",
+            "title": "Unlinked"
+          },
+          "external_id": {
+            "type": "string",
+            "title": "External Id"
+          },
+          "logic_id": {
+            "type": "string",
+            "title": "Logic Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unlinked",
+          "external_id",
+          "logic_id"
+        ],
+        "title": "TaskUnlinkOut"
+      },
+      "TasksByGoalGroup": {
+        "properties": {
+          "metric": {
+            "$ref": "#/components/schemas/MetricSummaryOut"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/TaskOut"
+            },
+            "type": "array",
+            "title": "Tasks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metric",
+          "tasks"
+        ],
+        "title": "TasksByGoalGroup"
+      },
+      "TasksByGoalOut": {
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/TasksByGoalGroup"
+            },
+            "type": "array",
+            "title": "Groups"
+          },
+          "unlinked": {
+            "items": {
+              "$ref": "#/components/schemas/TaskOut"
+            },
+            "type": "array",
+            "title": "Unlinked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "groups",
+          "unlinked"
+        ],
+        "title": "TasksByGoalOut"
+      },
+      "TrackerConnectIn": {
+        "properties": {
+          "tracker": {
+            "type": "string",
+            "title": "Tracker"
+          },
+          "base_url": {
+            "type": "string",
+            "title": "Base Url",
+            "default": ""
+          },
+          "project_key": {
+            "type": "string",
+            "title": "Project Key",
+            "default": ""
+          },
+          "token": {
+            "type": "string",
+            "title": "Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tracker",
+          "token"
+        ],
+        "title": "TrackerConnectIn"
+      },
+      "TrackerDeleteOut": {
+        "properties": {
+          "disconnected": {
+            "type": "string",
+            "title": "Disconnected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "disconnected"
+        ],
+        "title": "TrackerDeleteOut"
+      },
+      "TrackerOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "tracker": {
+            "type": "string",
+            "title": "Tracker"
+          },
+          "workspace": {
+            "type": "string",
+            "title": "Workspace"
+          },
+          "project_key": {
+            "type": "string",
+            "title": "Project Key"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "health": {
+            "type": "string",
+            "title": "Health"
+          },
+          "last_sync_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync At"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tracker",
+          "workspace",
+          "project_key",
+          "status",
+          "health",
+          "created_at"
+        ],
+        "title": "TrackerOut"
+      },
+      "TrackerSyncIn": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "jql_extra": {
+            "type": "string",
+            "title": "Jql Extra",
+            "default": ""
+          },
+          "max_results": {
+            "type": "integer",
+            "title": "Max Results",
+            "default": 100
+          }
+        },
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "TrackerSyncIn"
+      },
+      "TrackerSyncOut": {
+        "properties": {
+          "synced": {
+            "type": "integer",
+            "title": "Synced"
+          },
+          "tracker": {
+            "type": "string",
+            "title": "Tracker"
+          }
+        },
+        "type": "object",
+        "required": [
+          "synced",
+          "tracker"
+        ],
+        "title": "TrackerSyncOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WeekOut": {
+        "properties": {
+          "week": {
+            "type": "string",
+            "title": "Week"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "deltaPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deltapct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "week",
+          "value"
+        ],
+        "title": "WeekOut"
+      }
+    }
+  }
+}

@@ -1,0 +1,59 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# renderer build
+dist/
+out/
+.vite/
+*.tsbuildinfo
+
+# electron build artifacts
+release/
+app-builds/
+
+# playwright
+playwright-report/
+test-results/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+**/.venv/
+.uv-cache/
+# bundled standalone runtime (extraResources)
+engine/runtime/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# local db / data
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+*.db-wal
+*.db-shm
+
+# misc
+.DS_Store
+*.log
+
+# graphify scratch output (never committed)
+graphify-out/
+
+# design-reference: keep the .dc.html + tokens for porting, never the generated
+# unlicensed DS runtime (already excluded from capture, belt-and-suspenders).
+design-reference/**/_ds_bundle.js
+design-reference/**/support.js
+
+# pre-flip gates (council 2026-06-13)
+# design-reference/: carries an unlicensed property-marketplace artifact and
+# "Eigenstate" naming history; exclude the entire directory from the public surface.
+design-reference/
+# _claude/: development tooling (architecture notes, council docs, strategy);
+# not part of the public product surface.
+_claude/

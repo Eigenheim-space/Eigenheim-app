@@ -1,0 +1,197 @@
+// Electron main process: start the deterministic engine sidecar, then open the
+// window with the renderer. In dev the renderer is the Vite server; when packaged
+// it is the built dist. The sidecar is killed when the app quits.
+//
+// Spawn strategy:
+//   DEV (app.isPackaged === false):
+//     `uv run --project <ENGINE_DIR> eigenheim serve --host … --port … --log-level …`
+//     Uses the `eigenheim serve` CLI entrypoint (thin uvicorn wrapper).
+//     Requires uv + Python on the developer's PATH.
+//   PACKAGED (app.isPackaged === true):
+//     `<resourcesPath>/engine/runtime/python/bin/python3 -m uvicorn eigenheim.app:app …`
+//     Uses the python-build-standalone runtime bundled via bundle-engine.mjs +
+//     extraResources. No uv or system Python required on the end-user's machine.
+//
+// Session-token handshake and /health wait are identical in both paths.
+import { app, BrowserWindow, ipcMain } from "electron";
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve, join } from "node:path";
+import { mkdtempSync, writeFileSync, rmSync, existsSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { tmpdir } from "node:os";
+import { createRequire } from "node:module";
+import http from "node:http";
+
+const require = createRequire(import.meta.url);
+const secrets = require("./secrets.cjs"); // safeStorage custodian (CJS — needs Electron's require)
+const __dirname = dirname(fileURLToPath(import.meta.url));
+// In dev: engine lives at repo-root/engine/
+// In packaged: engine source is in extraResources at resourcesPath/engine/
+const ENGINE_DIR = app.isPackaged
+  ? resolve(process.resourcesPath, "engine")
+  : resolve(__dirname, "../../../engine");
+const ENGINE_PORT = 8765;
+const RENDERER_DEV_URL = "http://localhost:3020";
+
+let sidecar = null;
+let win = null;
+// Per-launch session token, set only when WE spawn the sidecar (so the value is
+// known). Left null when reusing an already-running dev engine, which has no token.
+let sessionToken = null;
+let tokenDir = null;
+
+function ping() {
+  return new Promise((res) => {
+    const req = http.get({ host: "127.0.0.1", port: ENGINE_PORT, path: "/health", timeout: 800 }, (r) => {
+      r.resume();
+      res(r.statusCode === 200);
+    });
+    req.on("error", () => res(false));
+    req.on("timeout", () => { req.destroy(); res(false); });
+  });
+}
+
+async function waitForHealth(timeoutMs = 15000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (await ping()) return true;
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return false;
+}
+
+/**
+ * Resolve the interpreter + argv to start the engine sidecar.
+ * In dev: delegates to uv, which manages the venv from pyproject.toml.
+ * Packaged: uses the python-build-standalone interpreter from extraResources.
+ *   The bundled layout (after bundle-engine.mjs):
+ *     resourcesPath/engine/runtime/python/bin/python3  — interpreter
+ *     resourcesPath/engine/eigenheim/                  — engine source
+ */
+function resolveEngineSpawn() {
+  if (!app.isPackaged) {
+    // Dev path: delegate to the `eigenheim serve` CLI (thin uvicorn wrapper).
+    // `--project ENGINE_DIR` tells uv which pyproject.toml/venv to use.
+    return {
+      cmd: "uv",
+      args: [
+        "run", "--project", ENGINE_DIR,
+        "eigenheim", "serve",
+        "--host", "127.0.0.1", "--port", String(ENGINE_PORT), "--log-level", "warning",
+      ],
+      cwd: ENGINE_DIR,
+    };
+  }
+
+  // Packaged path: bundled CPython.
+  const pythonBin = process.platform === "win32"
+    ? resolve(process.resourcesPath, "engine", "runtime", "python", "python.exe")
+    : resolve(process.resourcesPath, "engine", "runtime", "python", "bin", "python3");
+
+  if (!existsSync(pythonBin)) {
+    // Emit a clear error so it shows up in crash reports; the app will fail to
+    // connect but won't silently hang. The fix is to run bundle-engine.mjs first.
+    throw new Error(
+      `Bundled Python not found at ${pythonBin}. ` +
+      "Run: node apps/desktop/scripts/bundle-engine.mjs before building."
+    );
+  }
+
+  // PYTHONPATH ensures the engine source (extraResources/engine/eigenheim/) is
+  // importable even if the editable install (-e .) is not present in site-packages.
+  const engineSrcParent = resolve(process.resourcesPath, "engine");
+
+  return {
+    cmd: pythonBin,
+    args: [
+      "-m", "uvicorn", "eigenheim.app:app",
+      "--host", "127.0.0.1", "--port", String(ENGINE_PORT), "--log-level", "warning",
+    ],
+    cwd: engineSrcParent,
+    extraEnv: {
+      PYTHONPATH: engineSrcParent,
+      // Prevent Python from writing .pyc files into the read-only app bundle.
+      PYTHONDONTWRITEBYTECODE: "1",
+    },
+  };
+}
+
+async function startSidecar() {
+  if (await ping()) return; // reuse an already-running engine (dev convenience)
+  // Mint a token and hand it to the engine via a 0600 file (path in env). The
+  // engine reads it once and unlinks it, so the secret never sits in process env
+  // or `ps`. This locks the localhost engine to this app instance.
+  sessionToken = randomBytes(32).toString("hex");
+  tokenDir = mkdtempSync(join(tmpdir(), "eigenheim-"));
+  const tokenFile = join(tokenDir, "session.token");
+  writeFileSync(tokenFile, sessionToken, { mode: 0o600 });
+
+  const { cmd, args, cwd, extraEnv = {} } = resolveEngineSpawn();
+  // stdio:"inherit" forwards uvicorn output to the Electron process console, which
+  // is useful for crash diagnostics. The session token is never emitted by uvicorn
+  // (it arrives via EIGENHEIM_TOKEN_FILE and is unlinked before any log line fires;
+  // log level is "warning"). If future uvicorn middleware or debug logging ever
+  // outputs request headers, switch to piped stdio and strip /Bearer\s+[a-f0-9]{64}/
+  // before forwarding lines to console.
+  sidecar = spawn(
+    cmd,
+    args,
+    {
+      cwd,
+      stdio: "inherit",
+      env: { ...process.env, ...extraEnv, EIGENHEIM_TOKEN_FILE: tokenFile },
+    }
+  );
+  sidecar.on("error", (e) => console.error("[engine] spawn failed:", e.message));
+}
+
+function cleanupToken() {
+  if (tokenDir) {
+    try { rmSync(tokenDir, { recursive: true, force: true }); } catch { /* noop */ }
+    tokenDir = null;
+  }
+}
+
+function createWindow() {
+  win = new BrowserWindow({
+    width: 1320,
+    height: 860,
+    minWidth: 1100,
+    minHeight: 640,
+    backgroundColor: "#f9fafb",
+    title: "eigenheim",
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      preload: resolve(__dirname, "preload.cjs"),
+      // The renderer loads only our local bundle (no remote content), so handing
+      // it the session token via contextBridge is safe; it lets api.ts authenticate
+      // to the locked sidecar. Empty when reusing an unauthenticated dev engine.
+      additionalArguments: sessionToken ? [`--eigenheim-token=${sessionToken}`] : [],
+    },
+  });
+  if (app.isPackaged) win.loadFile(resolve(__dirname, "../dist/index.html"));
+  else win.loadURL(RENDERER_DEV_URL);
+}
+
+// Secrets IPC. Decryption stays in main; the renderer receives only metadata, plus
+// a just-in-time plaintext key for a sync it initiates (same trust level as typing it).
+ipcMain.handle("secrets:saveSource", (_e, payload) => secrets.saveSource(payload));
+ipcMain.handle("secrets:listSources", () => secrets.listSources());
+ipcMain.handle("secrets:getKey", (_e, id) => secrets.getKey(id));
+ipcMain.handle("secrets:deleteSource", (_e, id) => secrets.deleteSource(id));
+
+app.whenReady().then(async () => {
+  await startSidecar();
+  await waitForHealth();
+  createWindow();
+  app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+});
+
+app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
+app.on("quit", () => {
+  if (sidecar) try { sidecar.kill(); } catch { /* noop */ }
+  cleanupToken();
+});

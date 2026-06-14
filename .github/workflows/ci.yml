@@ -1,0 +1,234 @@
+name: ci
+
+# Run on every push and PR. Covers:
+#   - gitleaks secret-scan gate
+#   - renderer tsc --noEmit (strict TS)
+#   - engine pytest (57+ tests; golden + integration)
+#   - electron-builder --dir unsigned dry build (catches config errors without signing)
+#   - e2e API smoke (REST + MCP parity) on macOS + Linux
+#
+# Code signing / notarization: NOT here.
+# TODO(signing): add macOS notarization job once Apple Developer ID is available.
+# See _claude/STAGE_C.md § "Blocked on owner decisions".
+#
+# TODO(before public flip): pin all actions to full commit SHAs
+# (15-security-privacy.md requires SHA-pinned actions for the public repo).
+# Currently using tag refs because the repo is private (Phase 0-1).
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Suppress the Node 20 deprecation in actions/checkout + actions/setup-node
+# (GitHub deadline 2026-06-16). Forces action runner scripts onto Node 24.
+# Remove this env block once both actions ship a Node 24-native major version.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────
+  # 1. Secret scan gate — must pass before anything else builds
+  # ─────────────────────────────────────────────
+  secrets-gate:
+    name: gitleaks secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0   # full history so gitleaks can scan commits, not just working tree
+
+      # Pinned gitleaks binary — no third-party action (matches landing workflow pattern).
+      # --log-opts="--all" scans full history across all refs, not just the working tree.
+      # This catches secrets in early commits (e.g. personal email in commit 2238ae8)
+      # before the public repo flip.
+      - name: gitleaks
+        run: |
+          set -euo pipefail
+          VER=8.18.4
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${VER}/gitleaks_${VER}_linux_x64.tar.gz" \
+            | tar -xz -C /tmp gitleaks
+          /tmp/gitleaks detect --source . --log-opts="--all" --no-banner --redact --exit-code 1
+
+  # ─────────────────────────────────────────────
+  # 2. Python engine — pytest (golden + integration)
+  # ─────────────────────────────────────────────
+  engine-tests:
+    name: engine pytest
+    needs: secrets-gate
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          version: "0.11.6"
+          enable-cache: true
+
+      - name: Run pytest
+        working-directory: engine
+        run: uv run pytest --tb=short -q
+
+  # ─────────────────────────────────────────────
+  # 3. Renderer — TypeScript strict check + Vite build
+  # ─────────────────────────────────────────────
+  renderer-typecheck:
+    name: renderer tsc + build
+    needs: secrets-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Install deps
+        working-directory: apps/desktop
+        run: npm ci
+
+      - name: tsc --noEmit (strict)
+        working-directory: apps/desktop
+        run: npx tsc --noEmit
+
+      - name: vite build
+        working-directory: apps/desktop
+        run: npm run build
+
+      # NOTE: No separate lint step configured yet (no eslint/prettier config exists).
+      # TODO: add eslint + @typescript-eslint once the config is set up in a later chunk.
+
+  # ─────────────────────────────────────────────
+  # 4. Electron-builder dry build (unsigned --dir)
+  #    Validates electron-builder.yml config without producing a signed artifact.
+  #    Only runs on macOS (electron-builder mac target needs the darwin host).
+  # ─────────────────────────────────────────────
+  electron-dry-build:
+    name: electron-builder --dir (unsigned dry build)
+    needs: [engine-tests, renderer-typecheck]
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          version: "0.11.6"
+          enable-cache: true
+
+      - name: Install renderer deps
+        working-directory: apps/desktop
+        run: npm ci
+
+      - name: Build renderer
+        working-directory: apps/desktop
+        run: npm run build
+
+      # Scaffold engine/runtime/ with just the marker file so electron-builder does not
+      # fail on a missing extraResources source. A real bundle-engine.mjs run is needed
+      # on a build machine for a runnable app; this job only validates the config.
+      - name: Scaffold engine/runtime stub (config validation only)
+        run: |
+          mkdir -p engine/runtime/python/bin
+          touch engine/runtime/.bundle-stub
+          echo "# stub — run bundle-engine.mjs for a real bundled runtime" > engine/runtime/python/bin/python3
+
+      - name: electron-builder --dir (no sign, no notarize)
+        working-directory: apps/desktop
+        env:
+          # Suppress code-signing — this is an unsigned dry build.
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          CSC_LINK: ""
+          CSC_KEY_PASSWORD: ""
+        run: npx electron-builder --dir --mac
+        # NOTE: --dir produces an unpacked .app bundle; does NOT create a DMG.
+        # This validates that electron-builder.yml is parseable, that extraResources
+        # paths resolve, and that the electron entrypoint is valid.
+        # A signed DMG requires Apple Developer ID — see _claude/STAGE_C.md.
+
+      - name: Verify unpacked app exists
+        run: |
+          ls apps/desktop/release/mac-arm64/ 2>/dev/null \
+            || ls apps/desktop/release/mac/ 2>/dev/null \
+            || ls apps/desktop/release/mac-x64/ 2>/dev/null \
+            || { echo "No release output found"; find apps/desktop/release -type f 2>/dev/null; exit 1; }
+
+  # ─────────────────────────────────────────────
+  # 5. E2E API smoke — REST + MCP parity
+  #    Runs on macOS + Linux (no display needed for the API spec).
+  #    Windows nightly: dropped per council decision (solo maintainer).
+  # ─────────────────────────────────────────────
+  e2e-smoke:
+    name: e2e API smoke (${{ matrix.os }})
+    needs: [engine-tests, renderer-typecheck]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          version: "0.11.6"
+          enable-cache: true
+
+      - name: Install renderer deps (includes @playwright/test)
+        working-directory: apps/desktop
+        run: npm ci
+
+      - name: Install Playwright browsers (chromium only — used by api project)
+        working-directory: apps/desktop
+        run: npx playwright install --with-deps chromium
+
+      - name: Run e2e API smoke
+        working-directory: apps/desktop
+        run: npx playwright test --project=engine-api
+        env:
+          # No live keys — tests run against the fixture seed DB.
+          CI: "true"
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: playwright-report-${{ matrix.os }}
+          path: apps/desktop/playwright-report/
+          retention-days: 7
