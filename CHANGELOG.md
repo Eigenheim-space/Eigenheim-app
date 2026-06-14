@@ -6,7 +6,10 @@ fix. The git tag is the release trigger (in-app auto-update reads the published 
 
 ## Unreleased
 
-_Nothing yet._
+- Harden `report_detail` + metric computation against a tile referencing a deleted/missing
+  logic id. Every compute path already skips it (no 500); added regression tests, a
+  defense-in-depth guard in `compute_value` (clear error vs a cryptic `NoneType` crash), and
+  a test asserting the seeded default reports reference no missing logic.
 
 ## v0.1.2 — 2026-06-15
 

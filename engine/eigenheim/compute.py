@@ -88,6 +88,11 @@ def _aggregate(conn: sqlite3.Connection, inp: Input, start: str, end: str, resol
 
 
 def compute_value(conn: sqlite3.Connection, logic: Logic, start: str, end: str, resolve=None):
+    # Defense-in-depth: callers must skip a missing logic id (store_db.get_logic -> None).
+    # A clear error here beats a cryptic "NoneType has no attribute 'inputs'" if a future
+    # caller forgets the guard. Every current caller already filters None.
+    if logic is None:
+        raise ValueError("compute_value: logic is None — caller must skip a missing logic id")
     env: dict[str, float] = {}
     detail: list[tuple[Input, float | None, str]] = []
     for inp in logic.inputs:
