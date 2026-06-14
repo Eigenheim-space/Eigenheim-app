@@ -1,0 +1,127 @@
+name: release
+
+# Build the UNSIGNED desktop app for macOS, Windows, and Linux and attach the
+# installers to a GitHub Release. Triggered by pushing a v* tag (e.g. v0.1.0), or
+# manually via workflow_dispatch with an existing tag.
+#
+# No cross-compilation: each OS is built on its own native runner. The build is
+# unsigned (no Apple Developer ID / Windows OV cert yet), so users get an
+# "unidentified developer" warning, see the Install section in README.md.
+#
+# A create-release job makes the (pre)release first, then each matrix job uploads
+# its own artifacts into it, so the three runners never race to create the release.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write # create the release + upload assets
+
+# Suppress the Node 20 deprecation in actions/checkout + actions/setup-node.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  # ─────────────────────────────────────────────
+  # 1. Create the GitHub (pre)release once, before the matrix uploads to it.
+  # ─────────────────────────────────────────────
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Create release if absent
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists, reusing it."
+          else
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$TAG" \
+              --prerelease \
+              --notes "Unsigned pre-release builds for macOS, Windows, and Linux. These are not code-signed yet, so your OS will warn that the app is from an unidentified developer. See the Install section in the README for how to open it on each OS. Build from source: BUILD.md."
+          fi
+
+  # ─────────────────────────────────────────────
+  # 2. Build the unsigned app on each native runner + upload to the release.
+  # ─────────────────────────────────────────────
+  build:
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          version: "0.11.6"
+          enable-cache: true
+
+      - name: Install renderer deps
+        working-directory: apps/desktop
+        run: npm ci
+
+      - name: Build renderer
+        working-directory: apps/desktop
+        run: npm run build
+
+      - name: Bundle engine (standalone CPython + locked deps for this OS)
+        working-directory: apps/desktop
+        run: npm run bundle-engine
+
+      - name: Package unsigned installer(s)
+        working-directory: apps/desktop
+        env:
+          # Explicitly disable signing + auto-publish: we upload manually below.
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npx electron-builder --publish never
+
+      - name: Upload installers to the release
+        shell: bash
+        working-directory: apps/desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(release/*.dmg release/*.zip release/*.exe release/*.AppImage)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No installers found in release/ for ${{ matrix.os }}" >&2
+            ls -la release/ || true
+            exit 1
+          fi
+          echo "Uploading: ${files[*]}"
+          gh release upload "$TAG" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber

@@ -5,11 +5,13 @@ product metrics **deterministically**: you validate a formula once, eigenheim re
 it from your analytics sources with **zero LLM calls in the core**, and your AI agents
 read the same numbers over MCP.
 
-> Status: **pre-release**. Source available now under PolyForm Noncommercial. There is no
-> signed installer yet, but you can build a working app from source on macOS, Windows, or
-> Linux, see [BUILD.md](BUILD.md). The build is unsigned, so your OS will warn that it is
-> from an unidentified developer; BUILD.md covers how to open it anyway. Follow
-> [eigenheim.space](https://eigenheim.space) for the signed-installer launch.
+> Status: **pre-release**. Source available under PolyForm Noncommercial. Download an
+> unsigned build for your OS from
+> [Releases](https://github.com/Eigenheim-space/Eigenheim-app/releases/latest), or build
+> from source ([BUILD.md](BUILD.md)). Builds are unsigned, so your OS warns that the app is
+> from an unidentified developer; the [Install](#install) section shows how to open it on
+> each OS. Signed installers and auto-update come later, follow
+> [eigenheim.space](https://eigenheim.space).
 
 ## Why
 
@@ -23,6 +25,48 @@ eigenheim pins the formula once, computes it deterministically, and a recount co
 
 - Desktop: Electron + React 19 + TypeScript + Tailwind v4 + shadcn/ui (`apps/desktop`)
 - Engine: Python 3.12 + FastAPI + pydantic v2 + SQLite + FastMCP (`engine/`)
+
+## Install
+
+Pre-release builds are **unsigned** (no code-signing certificate yet), so your OS will warn
+that the app is from an unidentified developer. The per-OS steps below open it anyway.
+Prefer to build it yourself? See [BUILD.md](BUILD.md).
+
+Download the file for your OS from the
+**[latest release](https://github.com/Eigenheim-space/Eigenheim-app/releases/latest)**.
+
+### macOS
+
+1. Download `eigenheim-<version>-arm64.dmg` (Apple Silicon) or `eigenheim-<version>.dmg` (Intel).
+2. Open the `.dmg` and drag **eigenheim** into Applications.
+3. In Applications, **right-click** (or Control-click) eigenheim → **Open** → **Open** again.
+   macOS remembers the choice after the first launch.
+
+If you see "eigenheim is damaged and can't be opened", clear the download quarantine, then open it normally:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/eigenheim.app
+```
+
+### Windows
+
+1. Download `eigenheim Setup <version>.exe` and run it.
+2. SmartScreen shows "Windows protected your PC": click **More info**, then **Run anyway**.
+
+### Linux
+
+1. Download `eigenheim-<version>.AppImage`.
+2. Make it executable and run it:
+
+```bash
+chmod +x eigenheim-*.AppImage
+./eigenheim-*.AppImage
+```
+
+If the AppImage will not start, install FUSE (`sudo apt install libfuse2` on Debian/Ubuntu),
+or run it extracted: `./eigenheim-*.AppImage --appimage-extract-and-run`.
+
+On first launch the app creates and seeds its local database. No account or network needed.
 
 ## Develop
 
