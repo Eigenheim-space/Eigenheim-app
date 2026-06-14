@@ -39,14 +39,17 @@ Download the file for your OS from the
 
 1. Download `eigenheim-<version>-arm64.dmg` (Apple Silicon) or `eigenheim-<version>.dmg` (Intel).
 2. Open the `.dmg` and drag **eigenheim** into Applications.
-3. In Applications, **right-click** (or Control-click) eigenheim → **Open** → **Open** again.
-   macOS remembers the choice after the first launch.
+3. The app is unsigned, so the first launch is blocked. On Apple Silicon macOS may word this
+   as "eigenheim is damaged and can't be opened", that only means unsigned + downloaded, the
+   app is fine. Clear the download quarantine, then open it:
 
-If you see "eigenheim is damaged and can't be opened", clear the download quarantine, then open it normally:
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/eigenheim.app
+   open -a eigenheim
+   ```
 
-```bash
-xattr -dr com.apple.quarantine /Applications/eigenheim.app
-```
+   Alternative (no terminal): try to open it once, then go to System Settings → Privacy &
+   Security and click **Open Anyway** next to the eigenheim message.
 
 ### Windows
 

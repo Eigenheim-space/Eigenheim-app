@@ -16,6 +16,11 @@ productName: eigenheim
 executableName: eigenheim
 copyright: © 2026 Nikita Yurtayev
 
+# Ad-hoc sign the macOS app after packing. Without a Developer ID, electron-builder leaves
+# a broken linker-only signature, which makes a downloaded app fail to open as "damaged"
+# on Apple Silicon. The hook re-signs the bundle ad-hoc so it is valid + runnable.
+afterPack: build/afterPack.cjs
+
 directories:
   output: release
   buildResources: build

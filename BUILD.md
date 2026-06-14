@@ -60,18 +60,22 @@ accept; the app itself is unchanged.
 
 ### macOS
 
-The DMG / app is unsigned, so Gatekeeper blocks a normal double-click.
+The app is ad-hoc signed but not notarized, so Gatekeeper blocks the first launch of a
+downloaded build. On Apple Silicon the message can read "eigenheim is damaged and can't be
+opened", that only means unsigned + quarantined, the app is fine.
 
 1. Open the `.dmg`, drag **eigenheim** into Applications.
-2. **Right-click** (or Control-click) the app in Applications, choose **Open**, then
-   **Open** again in the dialog. macOS remembers the choice after the first time.
+2. Clear the download quarantine, then open it:
 
-If you still see "eigenheim is damaged and can't be opened" (Gatekeeper quarantine on a
-downloaded build), clear the quarantine flag and open normally:
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/eigenheim.app
+   open -a eigenheim
+   ```
 
-```bash
-xattr -dr com.apple.quarantine /Applications/eigenheim.app
-```
+   Alternative (no terminal): try to open it once, then go to System Settings → Privacy &
+   Security and click **Open Anyway** next to the eigenheim message.
+
+A locally built app (not downloaded) has no quarantine flag and opens directly.
 
 ### Windows
 
