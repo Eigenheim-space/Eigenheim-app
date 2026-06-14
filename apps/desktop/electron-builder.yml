@@ -10,6 +10,10 @@
 # See _claude/STAGE_C.md § "Blocked on owner decisions".
 appId: space.eigenheim.app
 productName: eigenheim
+# Without this, Linux derives the executable name from the package.json "name"
+# (@eigenheim/desktop -> "@eigenheimdesktop"), and electron-builder rejects the "@"
+# as unsafe for AppImage file paths. Pin a clean, filesystem-safe binary name.
+executableName: eigenheim
 copyright: © 2026 Nikita Yurtayev
 
 directories:
