@@ -4,12 +4,22 @@ from __future__ import annotations
 from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel
 
-from .. import store_db
+from .. import service, store_db
 from ..constants import _VALID_HYPOTHESIS_STATUSES
 from .deps import _auth
 from .models import DeletedOut, HypothesisOut
 
 router = APIRouter()
+
+
+# ---- Helpers ----
+
+def _with_spark(conn, row: dict) -> dict:
+    """Attach a `spark` series to a hypothesis dict (in-place copy)."""
+    logic_id = row.get("logic_id") or ""
+    row = dict(row)
+    row["spark"] = service.hypothesis_spark(conn, logic_id) if logic_id else []
+    return row
 
 
 # ---- Request models ----
@@ -41,7 +51,9 @@ def list_hypotheses(
     _auth(authorization)
     if status and status not in _VALID_HYPOTHESIS_STATUSES:
         raise HTTPException(422, f"status must be one of {sorted(_VALID_HYPOTHESIS_STATUSES)}")
-    return store_db.list_hypotheses(request.app.state.conn, status=status, logic_id=logic_id)
+    conn = request.app.state.conn
+    rows = store_db.list_hypotheses(conn, status=status, logic_id=logic_id)
+    return [_with_spark(conn, r) for r in rows]
 
 
 @router.post("/hypotheses", response_model=HypothesisOut)
@@ -64,10 +76,11 @@ def create_hypothesis(body: HypothesisIn, request: Request, authorization: str |
 def get_hypothesis(hyp_id: str, request: Request, authorization: str | None = Header(None)):
     """Get one hypothesis by id."""
     _auth(authorization)
-    h = store_db.get_hypothesis(request.app.state.conn, hyp_id)
+    conn = request.app.state.conn
+    h = store_db.get_hypothesis(conn, hyp_id)
     if not h:
         raise HTTPException(404, "hypothesis not found")
-    return h
+    return _with_spark(conn, h)
 
 
 @router.patch("/hypotheses/{hyp_id}/status", response_model=HypothesisOut)
@@ -81,10 +94,11 @@ def update_hypothesis_status(
     _auth(authorization)
     if body.status not in _VALID_HYPOTHESIS_STATUSES:
         raise HTTPException(422, f"status must be one of {sorted(_VALID_HYPOTHESIS_STATUSES)}")
-    result = store_db.update_hypothesis_status(request.app.state.conn, hyp_id, body.status)
+    conn = request.app.state.conn
+    result = store_db.update_hypothesis_status(conn, hyp_id, body.status)
     if result is None:
         raise HTTPException(404, "hypothesis not found")
-    return result
+    return _with_spark(conn, result)
 
 
 @router.delete("/hypotheses/{hyp_id}", response_model=DeletedOut)

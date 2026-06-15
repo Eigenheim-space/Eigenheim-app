@@ -370,6 +370,7 @@ class HypothesisOut(BaseModel):
     status: str     # "proposed" | "testing" | "confirmed" | "rejected"
     source: str     # "agent" | "user"
     created_at: str
+    spark: list[float] = []  # recent weekly series for the linked logic_id (last ~8 pts)
 
 
 # ── Decisions ────────────────────────────────────────────────────────────────

@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
+import { FileText, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useApp, onboardingSeen, markOnboardingSeen } from "./store";
 import { secrets } from "./secrets";
-import { LeftRail, RightPanel, BootState, EngineFailure } from "./shell";
-import { ReportsGrid, ReportView } from "./reports";
+import { LeftRail, RightPanel, ContextColumn, BootState, EngineFailure } from "./shell";
+import { ReportView } from "./reports";
 import { Settings } from "./settings";
 import { TraceModal } from "./trace";
 import { LogicDrawer, SyncDrawer } from "./panel";
@@ -19,6 +20,39 @@ import { ChatPage } from "./chat/ChatPage";
 import { queryKeys, bootstrapQueryFn, reportDetailQueryFn, getEngineReportIds, queryClient } from "./queries";
 import { api } from "./api";
 import { updaterBridge } from "./updater";
+
+/* Center empty/select state shown in the Reports section when no report is open yet. */
+function ReportsSelectState() {
+  const setReportDrawer = useApp((s) => s.setReportDrawer);
+  return (
+    <div style={{
+      height: "100%", display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center", gap: 14,
+      color: "var(--text-tertiary)",
+    }}>
+      <FileText size={36} strokeWidth={1.25} style={{ opacity: 0.45 }} />
+      <div style={{ fontSize: 14, color: "var(--text-tertiary)" }}>
+        Select a report from the list, or create one.
+      </div>
+      <button
+        onClick={() => setReportDrawer(true)}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          padding: "7px 14px", borderRadius: "var(--radius-md)",
+          border: "1px solid var(--border-primary)", background: "var(--color-white)",
+          color: "var(--text-secondary)", fontSize: 13, fontWeight: 600,
+          fontFamily: "var(--font-sans)", cursor: "pointer",
+          boxShadow: "var(--shadow-xs)",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-hover)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "var(--color-white)"; }}
+      >
+        <Plus size={14} />
+        Create report
+      </button>
+    </div>
+  );
+}
 
 export function App() {
   const engine = useApp((s) => s.engine);
@@ -137,10 +171,16 @@ export function App() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // The context column is visible on reports/report views.
+  // When it's present, suppress the right panel to avoid a four-column layout.
+  const hasContextColumn = engine === "ready" && (view === "reports" || view === "report");
+
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--surface-secondary)" }}>
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
         <LeftRail />
+        {/* Context column: Reports section only; null on every other view */}
+        <ContextColumn />
         <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", background: "var(--surface-secondary)", overflow: "hidden" }}>
           {engine === "booting" ? <BootState />
             : engine === "failed" ? <EngineFailure />
@@ -153,10 +193,12 @@ export function App() {
             : view === "decisions" ? <DecisionsView />
             : view === "graph" ? <GraphView />
             : view === "rice" ? <RiceView />
-            : <ReportsGrid />}
+            : /* view === "reports" — no report selected yet */
+              <ReportsSelectState />}
         </main>
-        {/* Suppress the right data panel on the chat page — it has its own history sidebar */}
-        {engine === "ready" && view !== "chat" && <RightPanel />}
+        {/* Suppress the right data panel on chat (has its own sidebar) and when
+            the context column is visible (avoids four-column layout collision). */}
+        {engine === "ready" && view !== "chat" && !hasContextColumn && <RightPanel />}
       </div>
 
       {/* overlays */}

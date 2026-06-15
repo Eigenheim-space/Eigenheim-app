@@ -1126,6 +1126,8 @@ export interface components {
             source: string;
             /** Created At */
             created_at: string;
+            /** Spark — recent weekly series for the linked logic_id (last ~8 pts) */
+            spark: number[];
         };
         /** HypothesisStatusIn */
         HypothesisStatusIn: {

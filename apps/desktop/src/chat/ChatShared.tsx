@@ -20,27 +20,35 @@ import { parseAnswerSegments, type MetricChip } from "./context";
 
 // ─── Ollama reachability probe ────────────────────────────────────────────────
 
-type OllamaReach = "unknown" | "reachable" | "unreachable";
+export type OllamaReach = "unknown" | "reachable" | "unreachable" | "model-missing";
 
 /**
- * Lightweight ping of the Ollama /api/tags endpoint.
- * Runs once when the chat surface mounts (or when the endpoint/provider changes).
- * Returns "unknown" on first render, then resolves to "reachable" or "unreachable".
- * Only probes when chatProvider === "ollama"; returns "unknown" otherwise.
+ * Probes the Ollama /api/tags endpoint and cross-checks the selected model.
+ *
+ * States:
+ *   "unknown"       — initial / provider !== ollama
+ *   "reachable"     — server up + selected model is pulled
+ *   "unreachable"   — server down or non-ok response
+ *   "model-missing" — server up but selected model is not in the pulled list
+ *
+ * Re-probes when chatProvider, chatOllamaEndpoint, or chatOllamaModel changes.
  */
 export function useOllamaReachability(): OllamaReach {
   const chatProvider = useApp((s) => s.chatProvider);
   const chatOllamaEndpoint = useApp((s) => s.chatOllamaEndpoint);
+  const chatOllamaModel = useApp((s) => s.chatOllamaModel);
   const [reach, setReach] = useState<OllamaReach>("unknown");
-  const lastEndpoint = useRef<string | null>(null);
+  const lastKey = useRef<string | null>(null);
 
   useEffect(() => {
     if (chatProvider !== "ollama") {
       setReach("unknown");
       return;
     }
-    // Skip re-probe if the endpoint hasn't changed since last check.
-    if (lastEndpoint.current === chatOllamaEndpoint && reach !== "unknown") return;
+
+    // Re-probe whenever endpoint or model changes.
+    const key = `${chatOllamaEndpoint}::${chatOllamaModel}`;
+    if (lastKey.current === key && reach !== "unknown") return;
 
     let cancelled = false;
     setReach("unknown");
@@ -50,13 +58,27 @@ export function useOllamaReachability(): OllamaReach {
         const res = await fetch(`${chatOllamaEndpoint}/api/tags`, {
           signal: AbortSignal.timeout(2000),
         });
-        if (!cancelled) {
-          lastEndpoint.current = chatOllamaEndpoint;
-          setReach(res.ok ? "reachable" : "unreachable");
+        if (cancelled) return;
+        lastKey.current = key;
+
+        if (!res.ok) {
+          setReach("unreachable");
+          return;
         }
+
+        const data = await res.json() as { models?: { name: string }[] };
+        const pulled = (data.models ?? []).map((m) => m.name);
+
+        // Match exact name OR base name (tolerate ":latest" suffix Ollama appends).
+        const modelBase = chatOllamaModel.split(":")[0];
+        const found = pulled.some(
+          (n) => n === chatOllamaModel || n.split(":")[0] === modelBase
+        );
+
+        setReach(found ? "reachable" : "model-missing");
       } catch {
         if (!cancelled) {
-          lastEndpoint.current = chatOllamaEndpoint;
+          lastKey.current = key;
           setReach("unreachable");
         }
       }
@@ -65,7 +87,7 @@ export function useOllamaReachability(): OllamaReach {
     void probe();
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatProvider, chatOllamaEndpoint]);
+  }, [chatProvider, chatOllamaEndpoint, chatOllamaModel]);
 
   return reach;
 }

@@ -659,6 +659,79 @@ def test_mcp_list_hypotheses_filter_by_logic_id():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# H4 — Hypothesis spark field (Delta 2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_rest_list_hypotheses_spark_field_present(client):
+    """GET /hypotheses always includes a `spark` field (list[float])."""
+    client.post("/hypotheses", json={"statement": "H with no metric"})
+    resp = client.get("/hypotheses")
+    assert resp.status_code == 200
+    rows = resp.json()
+    assert len(rows) == 1
+    assert "spark" in rows[0], "spark field must be present in list response"
+    assert isinstance(rows[0]["spark"], list)
+
+
+def test_rest_get_hypothesis_spark_field_present(client):
+    """GET /hypotheses/{id} includes `spark` field."""
+    created = client.post("/hypotheses", json={"statement": "Single"}).json()
+    fetched = client.get(f"/hypotheses/{created['id']}").json()
+    assert "spark" in fetched
+    assert isinstance(fetched["spark"], list)
+
+
+def test_rest_spark_empty_when_no_logic_id(client):
+    """spark is [] when hypothesis has no linked metric."""
+    created = client.post("/hypotheses", json={"statement": "Unlinked"}).json()
+    fetched = client.get(f"/hypotheses/{created['id']}").json()
+    assert fetched["spark"] == []
+
+
+def test_rest_spark_list_float_when_logic_id_linked(client):
+    """spark is a list[float] when logic_id is linked (even with empty event store)."""
+    # The 'activation' logic is seeded but the test DB has no events, so series
+    # values will be 0.0 (count / count = 0). The important thing is the field
+    # is present and is a list of numbers, not an error.
+    created = client.post(
+        "/hypotheses",
+        json={"statement": "Low activation", "logic_id": "activation"},
+    ).json()
+    fetched = client.get(f"/hypotheses/{created['id']}").json()
+    assert "spark" in fetched
+    assert isinstance(fetched["spark"], list)
+    assert all(isinstance(v, (int, float)) for v in fetched["spark"])
+
+
+def test_rest_patch_status_response_includes_spark(client):
+    """PATCH /hypotheses/{id}/status response includes spark."""
+    created = client.post("/hypotheses", json={"statement": "H"}).json()
+    patched = client.patch(
+        f"/hypotheses/{created['id']}/status",
+        json={"status": "testing"},
+    ).json()
+    assert "spark" in patched
+    assert isinstance(patched["spark"], list)
+
+
+def test_hypothesis_spark_helper_no_logic():
+    """hypothesis_spark returns [] when logic_id is empty or missing."""
+    from eigenheim.service import hypothesis_spark
+    c = _conn()
+    assert hypothesis_spark(c, "") == []
+    assert hypothesis_spark(c, "nonexistent_logic_xyz") == []
+
+
+def test_hypothesis_spark_helper_known_logic():
+    """hypothesis_spark returns a list[float] for a known logic (empty events → zeros)."""
+    from eigenheim.service import hypothesis_spark
+    c = _conn()
+    result = hypothesis_spark(c, "activation")
+    assert isinstance(result, list)
+    assert all(isinstance(v, float) for v in result)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # No LLM import — determinism guard
 # ─────────────────────────────────────────────────────────────────────────────
 

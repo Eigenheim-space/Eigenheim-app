@@ -34,7 +34,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useApp } from "../store";
 import { Badge, Button, ErrorBanner, IconButton } from "../ui";
 import { useChatEngine } from "./useChatEngine";
-import { ProviderSwitcher, AnswerText } from "./ChatShared";
+import { ProviderSwitcher, AnswerText, useOllamaReachability } from "./ChatShared";
 import { chatApi, type ConversationListItem, type ConversationMessage } from "../api";
 import type { ChatMessage } from "./providers";
 
@@ -103,6 +103,7 @@ export function ChatPage() {
 
   const isCloud = engine.isCloud;
   const isAgent = engine.isAgent;
+  const ollamaReach = useOllamaReachability();
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
@@ -573,8 +574,12 @@ export function ChatPage() {
                 <Badge tone="danger">Cloud: OpenRouter</Badge>
               ) : isAgent ? (
                 <Badge tone="neutral">Agent · MCP</Badge>
+              ) : ollamaReach === "unreachable" ? (
+                <Badge tone="danger">Local · not connected</Badge>
+              ) : ollamaReach === "model-missing" ? (
+                <Badge tone="warning">Local · {chatOllamaModel} · not installed</Badge>
               ) : (
-                <Badge tone="info" dot>
+                <Badge tone="info" dot={ollamaReach === "reachable"}>
                   Local · {chatOllamaModel}
                 </Badge>
               )}

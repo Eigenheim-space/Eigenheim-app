@@ -3,65 +3,53 @@ import { ChartLine, Settings as SettingsIcon, PanelLeftClose, PanelLeftOpen, Pan
 import { useApp } from "./store";
 import { Ket, IconButton, Tooltip, Button, copyText } from "./ui";
 import { EventsTab, LogicTab, SyncsTab, TasksFacetsTab } from "./panel";
+import { ReportsContextList } from "./reports";
 
 /* ---------------- Left rail ---------------- */
 export function LeftRail() {
-  const { railCollapsed, toggleRail, view, goReports, goSettings, goTasks, goGoals, goHypotheses, goDecisions, goGraph, goRice, openChat, goChat, chatOpen } = useApp();
-  const w = railCollapsed ? 56 : 208;
+  const { railCollapsed, toggleRail, view, goReports, goSettings, goTasks, goGoals, goHypotheses, goDecisions, goGraph, goRice, goChat, chatOpen } = useApp();
+  // Expanded rail is 76px (vertical icon+label items); collapsed is 56px (icon-only).
+  const w = railCollapsed ? 56 : 76;
 
-  const navItem = (active: boolean, icon: React.ReactNode, label: string, onClick: () => void, trailing?: React.ReactNode) => {
+  const navItem = (active: boolean, icon: React.ReactNode, label: string, onClick: () => void) => {
     const body = (
       <button onClick={onClick} aria-current={active} aria-label={label} style={{
-        width: "100%", display: "flex", alignItems: "center", gap: 10, minHeight: 44,
-        padding: railCollapsed ? 0 : "0 12px", justifyContent: railCollapsed ? "center" : "flex-start",
-        borderRadius: 8, border: "1px solid transparent", cursor: "pointer",
+        width: "100%", display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", gap: 4, minHeight: 56, padding: "8px 4px",
+        borderRadius: "var(--radius-md)", border: "1px solid transparent", cursor: "pointer",
         background: active ? "var(--surface-active)" : "transparent",
         color: active ? "var(--text-primary)" : "var(--text-tertiary)",
-        fontSize: 14, fontWeight: 600,
       }}
         onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "var(--surface-hover)"; }}
         onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}>
-        <span style={{ display: "flex" }}>{icon}</span>
-        {!railCollapsed && <span style={{ flex: 1, textAlign: "left" }}>{label}</span>}
-        {!railCollapsed && trailing}
+        <span style={{ display: "flex", flexShrink: 0 }}>{icon}</span>
+        {!railCollapsed && (
+          <span style={{
+            fontSize: 10.5, fontWeight: 500, letterSpacing: "0.01em",
+            fontFamily: "var(--font-sans)", lineHeight: 1.2,
+            textAlign: "center", whiteSpace: "normal",
+            color: active ? "var(--text-primary)" : "var(--text-tertiary)",
+            maxWidth: 68,
+          }}>
+            {label}
+          </span>
+        )}
       </button>
     );
+    // Only wrap in Tooltip when collapsed (icon-only) — labels make tooltips redundant when expanded.
     return railCollapsed ? <Tooltip content={label}>{body}</Tooltip> : body;
   };
 
-  // ⌘K pill label shown on the Chat rail item (expanded rail only).
-  // Phase 2: rail Chat click navigates to the full chat page (goChat).
-  // ⌘K always opens the overlay (keyboard shortcut unchanged).
-  const cmdKPill = (
-    <span style={{
-      fontSize: 11, fontWeight: 600, letterSpacing: "0.02em",
-      color: "var(--text-quaternary)",
-      background: "var(--gray-100)",
-      border: "1px solid var(--border-tertiary)",
-      borderRadius: "var(--radius-sm)",
-      padding: "1px 5px",
-      lineHeight: 1.4,
-    }}>
-      ⌘K
-    </span>
-  );
-
   return (
     <div style={{ width: w, flexShrink: 0, borderRight: "1px solid var(--border-secondary)", background: "var(--surface-secondary)", display: "flex", flexDirection: "column", transition: "width 140ms ease" }}>
-      {/* Header: logo + (when expanded) the collapse arrow to its right */}
-      <div style={{ height: 56, display: "flex", alignItems: "center", gap: 9, padding: railCollapsed ? 0 : "0 8px 0 14px", justifyContent: railCollapsed ? "center" : "flex-start" }}>
-        <Ket size={22} />
-        {!railCollapsed && <span style={{ fontWeight: 600, fontSize: 16, letterSpacing: "-0.01em", flex: 1 }}>eigenheim</span>}
-        {!railCollapsed && (
-          <Tooltip content="Collapse rail · ⌘B">
-            <IconButton label="Collapse rail" onClick={toggleRail}><PanelLeftClose size={18} /></IconButton>
-          </Tooltip>
-        )}
+      {/* Header: centered logo mark only — no wordmark (76px rail is too narrow) */}
+      <div style={{ height: 56, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Ket size={24} />
       </div>
-      <div style={{ padding: railCollapsed ? "6px 10px" : "6px 12px", display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
-        {/* Chat: rail click navigates to the full chat page; ⌘K opens the overlay (keyboard shortcut). */}
+      <div style={{ padding: "6px 8px", display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+        {/* Chat: rail click navigates to the full chat page; ⌘K opens the overlay. */}
         <Tooltip content="Open Chat (⌘K for quick overlay)">
-          {navItem(view === "chat" || chatOpen, <MessageCircle size={18} />, "Chat", goChat, cmdKPill)}
+          {navItem(view === "chat" || chatOpen, <MessageCircle size={18} />, "Chat", goChat)}
         </Tooltip>
         {navItem(view === "reports" || view === "report", <ChartLine size={18} />, "Reports", goReports)}
         {navItem(view === "tasks", <ListChecks size={18} />, "Tasks", goTasks)}
@@ -71,14 +59,18 @@ export function LeftRail() {
         {navItem(view === "decisions", <BookMarked size={18} />, "Decisions", goDecisions)}
         {navItem(view === "graph", <Network size={18} />, "Graph", goGraph)}
       </div>
-      <div style={{ padding: railCollapsed ? "6px 10px 10px" : "6px 12px 12px", display: "flex", flexDirection: "column", gap: 4, borderTop: "1px solid var(--border-tertiary)" }}>
+      {/* Footer: Settings + collapse/expand toggle */}
+      <div style={{ padding: "6px 8px 10px", display: "flex", flexDirection: "column", gap: 4, borderTop: "1px solid var(--border-tertiary)" }}>
         {navItem(view === "settings", <SettingsIcon size={18} />, "Settings", goSettings)}
-        {/* Expand arrow lives here only while collapsed (no header room); collapse lives in the header */}
-        {railCollapsed && (
-          <Tooltip content="Expand rail · ⌘B">
-            <IconButton label="Expand rail" onClick={toggleRail} style={{ alignSelf: "center" }}><PanelLeftOpen size={18} /></IconButton>
-          </Tooltip>
-        )}
+        <Tooltip content={railCollapsed ? "Expand rail · ⌘B" : "Collapse rail · ⌘B"}>
+          <IconButton
+            label={railCollapsed ? "Expand rail" : "Collapse rail"}
+            onClick={toggleRail}
+            style={{ alignSelf: "center", width: 36, height: 36 }}
+          >
+            {railCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          </IconButton>
+        </Tooltip>
       </div>
     </div>
   );
@@ -155,6 +147,36 @@ export function RightPanel() {
         {rightTab === "logic" && <LogicTab />}
         {rightTab === "syncs" && <SyncsTab />}
       </div>
+    </div>
+  );
+}
+
+/* ---------------- Context column (two-tier Tier-2) ---------------- */
+/**
+ * Renders the contextual secondary column when the current view has one.
+ * Only Reports (view === "reports" | "report") has a Tier-2 today.
+ * Every other view returns null — the column doesn't render at all.
+ * Shell imports only ReportsContextList; list-rendering stays in its view file.
+ */
+export function ContextColumn() {
+  const view = useApp((s) => s.view);
+  const isReports = view === "reports" || view === "report";
+
+  if (!isReports) return null;
+
+  return (
+    <div
+      style={{
+        width: 240,
+        flexShrink: 0,
+        borderRight: "1px solid var(--border-secondary)",
+        background: "var(--surface-secondary)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
+      <ReportsContextList />
     </div>
   );
 }

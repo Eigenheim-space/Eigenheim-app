@@ -133,6 +133,21 @@ export class OllamaAdapter implements ChatProvider {
     });
 
     if (!res.ok) {
+      // 404 means the model isn't pulled — surface a clear, actionable message.
+      if (res.status === 404) {
+        let isModelError = true;
+        try {
+          const body = await res.json() as { error?: string };
+          const msg = body.error ?? "";
+          isModelError = /not found|model/i.test(msg) || msg === "";
+        } catch { /* unparseable body, assume model error */ }
+        if (isModelError) {
+          throw new Error(
+            `Ollama: model "${this.cfg.model}" isn't installed. ` +
+            `Pull it (ollama pull ${this.cfg.model}) or pick another model in Settings → AI Chat.`
+          );
+        }
+      }
       throw new Error(`Ollama did not respond at ${this.cfg.endpoint} (${res.status})`);
     }
 

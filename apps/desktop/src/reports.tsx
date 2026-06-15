@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, ArrowUpRight, ArrowDownRight, ArrowLeft, TrendingUp, X, Search, MoreHorizontal } from "lucide-react";
+import { Plus, ArrowUpRight, ArrowDownRight, ArrowLeft, TrendingUp, X, Search, MoreHorizontal, FileText } from "lucide-react";
 import { useApp } from "./store";
 import { api, type ReportCreateOut } from "./api";
 import { type Report, type Metric } from "./data";
@@ -24,6 +24,108 @@ const periodChip = (p: string) => (
    implemented (no date-range picker), so we omit the override and the
    API returns the report's stored period_days. */
 const PERIOD_DAYS: Record<string, number | undefined> = { "7d": 7, "30d": 30, "custom": undefined };
+
+/* ---------------- Reports context list (two-tier Tier-2 column) ---------------- */
+export function ReportsContextList() {
+  const openReport = useApp((s) => s.openReport);
+  const openReportId = useApp((s) => s.openReportId);
+  const setReportDrawer = useApp((s) => s.setReportDrawer);
+  const reportDrawer = useApp((s) => s.reportDrawer);
+  const { data: bootstrap } = useQuery({ queryKey: queryKeys.engineBootstrap, queryFn: bootstrapQueryFn, staleTime: 2 * 60 * 1000 });
+  const reports: Report[] = (bootstrap?.reports as Report[] | undefined) ?? [];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+      {/* Section header */}
+      <div style={{ padding: "16px 14px 8px", flexShrink: 0 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--text-secondary)" }}>
+          Reports
+        </span>
+      </div>
+
+      {/* + New report row */}
+      <div style={{ padding: "0 8px 4px", flexShrink: 0 }}>
+        <button
+          onClick={() => setReportDrawer(true)}
+          aria-label="Create new report"
+          style={{
+            width: "100%", display: "flex", alignItems: "center", gap: 8,
+            padding: "7px 8px", borderRadius: 7, border: "none", cursor: "pointer",
+            background: "transparent", color: "var(--brand-600)",
+            fontSize: 13, fontWeight: 600, fontFamily: "var(--font-sans)",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--surface-hover)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+        >
+          <Plus size={14} style={{ flexShrink: 0 }} />
+          New report
+        </button>
+      </div>
+
+      {/* Divider */}
+      {reports.length > 0 && (
+        <div style={{ height: 1, background: "var(--border-tertiary)", margin: "0 10px 4px", flexShrink: 0 }} aria-hidden />
+      )}
+
+      {/* Report rows */}
+      <div className="eh-scroll" style={{ flex: 1, overflowY: "auto", padding: "0 8px 8px" }}>
+        {reports.length === 0 ? (
+          <div style={{ padding: "12px 8px", fontSize: 12, color: "var(--text-quaternary)", lineHeight: 1.5 }}>
+            No reports yet.
+          </div>
+        ) : (
+          reports.map((r) => {
+            const active = r.id === openReportId;
+            return (
+              <button
+                key={r.id}
+                tabIndex={0}
+                onClick={() => openReport(r.id)}
+                onKeyDown={(e) => { if (e.key === "Enter") openReport(r.id); }}
+                aria-current={active ? "page" : undefined}
+                title={r.name}
+                style={{
+                  width: "100%", display: "flex", alignItems: "center", gap: 8,
+                  padding: "7px 8px", borderRadius: 7, border: "none", cursor: "pointer",
+                  background: active ? "var(--surface-active)" : "transparent",
+                  color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                  fontSize: 13, fontWeight: active ? 600 : 400,
+                  fontFamily: "var(--font-sans)", textAlign: "left",
+                }}
+                onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "var(--surface-hover)"; }}
+                onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
+              >
+                {/* Name — truncated */}
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>
+                  {r.name}
+                </span>
+                {/* Status badge */}
+                <StatusBadge kind={r.status} />
+                {/* Period chip */}
+                <span style={{
+                  fontSize: 11, fontWeight: 600, color: "var(--text-quaternary)",
+                  background: "var(--gray-100)", borderRadius: "var(--radius-sm)",
+                  padding: "1px 5px", flexShrink: 0,
+                }}>
+                  {r.period}
+                </span>
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      {/* Create drawer — mounted here so it works from the context column */}
+      {reportDrawer && (
+        <CreateReportDrawer
+          logics={bootstrap?.logic ?? []}
+          onClose={() => setReportDrawer(false)}
+          onCreated={(id) => { setReportDrawer(false); openReport(id); }}
+        />
+      )}
+    </div>
+  );
+}
 
 /* ---------------- Reports grid ---------------- */
 export function ReportsGrid() {

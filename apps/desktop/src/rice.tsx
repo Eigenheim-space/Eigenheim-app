@@ -41,6 +41,12 @@ import { queryKeys, riceQueryFn, bootstrapQueryFn, invalidate, findReportForMetr
 import {
   Badge, Button, IconButton, EmptyState, ErrorBanner, Segmented,
 } from "./ui";
+
+/* ------------------------------------------------------------------ */
+/* RICE view types                                                      */
+/* ------------------------------------------------------------------ */
+
+type RiceViewMode = "list" | "matrix" | "buckets";
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
@@ -781,8 +787,355 @@ function RiceDrawer({ mode, item, logicOptions, onClose, onSave, onTrace }: Rice
 }
 
 /* ------------------------------------------------------------------ */
+/* Bucket derivation                                                   */
+/*                                                                     */
+/* Rule: rank scored items by score DESCENDING, split into three groups */
+/*   - highest scores → Now, middle → Soon, lowest → Later             */
+/*   - sizes as-equal-as-possible; any remainder favors Now then Soon, */
+/*     so Now is never empty when items exist and always holds the      */
+/*     top-priority items (a lone item is "Now").                       */
+/*   - null score → Later (missing input, not a valid priority)        */
+/*                                                                     */
+/* Deterministic from the score; no drag-to-reorder.                   */
+/* ------------------------------------------------------------------ */
+
+type Bucket = "Now" | "Soon" | "Later";
+
+function scoreBucket(item: RiceItem, scoredItems: RiceItem[]): Bucket {
+  if (item.score == null) return "Later";
+  const sorted = [...scoredItems].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)); // descending
+  const n = sorted.length;
+  if (n === 0) return "Later";
+  const base = Math.floor(n / 3), rem = n % 3;
+  const nowSize = base + (rem > 0 ? 1 : 0);   // remainder to Now first
+  const soonSize = base + (rem > 1 ? 1 : 0);  // then Soon
+  const idx = sorted.findIndex((i) => i.id === item.id);
+  if (idx < nowSize) return "Now";
+  if (idx < nowSize + soonSize) return "Soon";
+  return "Later";
+}
+
+/* ------------------------------------------------------------------ */
+/* Matrix view (Effort × Impact scatter, inline SVG)                  */
+/* ------------------------------------------------------------------ */
+
+interface MatrixViewProps {
+  items: RiceItem[];
+  onItemClick: (id: string) => void;
+}
+
+function MatrixView({ items, onItemClick }: MatrixViewProps) {
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  // Only show items that have both effort and impact defined
+  const plottable = useMemo(() =>
+    items.filter((i) => i.effort > 0 && i.impact != null),
+    [items]
+  );
+
+  // SVG canvas
+  const W = 480, H = 340;
+  const PAD = { top: 20, right: 20, bottom: 44, left: 52 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  // Axis ranges — expand a little beyond the data
+  const efforts = plottable.map((i) => i.effort);
+  const impacts = plottable.map((i) => i.impact as number);
+  const effortMax = efforts.length ? Math.max(...efforts) * 1.2 : 4;
+  const impactMax = impacts.length ? Math.max(...impacts) * 1.2 : 4;
+  const effortMin = 0;
+  const impactMin = 0;
+
+  function toX(effort: number): number {
+    return PAD.left + ((effort - effortMin) / (effortMax - effortMin)) * plotW;
+  }
+  function toY(impact: number): number {
+    return PAD.top + plotH - ((impact - impactMin) / (impactMax - impactMin)) * plotH;
+  }
+
+  // Score → dot size: radius 5–10
+  const scores = plottable.map((i) => i.score ?? 0);
+  const scoreMax = scores.length ? Math.max(...scores) : 1;
+  function dotR(score: number | null): number {
+    if (!score || scoreMax === 0) return 5;
+    return 5 + (score / scoreMax) * 5;
+  }
+
+  // Axis ticks
+  const effortTicks = [0, 1, 2, 3].filter((t) => t <= effortMax);
+  const impactTicks = [0.25, 0.5, 1, 2, 3].filter((t) => t <= impactMax);
+
+  if (plottable.length === 0) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "64px 24px" }}>
+        <span style={{ fontSize: 14, color: "var(--text-quaternary)" }}>
+          No items with both Effort and Impact set.
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: "24px 32px", overflowX: "auto" }}>
+      <svg
+        width={W}
+        height={H}
+        style={{ display: "block", fontFamily: "var(--font-mono)", overflow: "visible" }}
+        aria-label="Effort vs Impact scatter matrix"
+        role="img"
+      >
+        {/* Axis lines */}
+        <line
+          x1={PAD.left} y1={PAD.top}
+          x2={PAD.left} y2={PAD.top + plotH}
+          stroke="var(--brand-600)" strokeWidth={1}
+        />
+        <line
+          x1={PAD.left} y1={PAD.top + plotH}
+          x2={PAD.left + plotW} y2={PAD.top + plotH}
+          stroke="var(--brand-600)" strokeWidth={1}
+        />
+
+        {/* X-axis ticks (Effort) */}
+        {effortTicks.map((t) => (
+          <g key={`ex-${t}`}>
+            <line x1={toX(t)} y1={PAD.top + plotH} x2={toX(t)} y2={PAD.top + plotH + 4}
+              stroke="var(--brand-600)" strokeWidth={1} />
+            <text x={toX(t)} y={PAD.top + plotH + 16}
+              textAnchor="middle" fontSize={10} fill="var(--text-quaternary)"
+              style={{ fontVariantNumeric: "tabular-nums" }}>
+              {t}pm
+            </text>
+          </g>
+        ))}
+
+        {/* Y-axis ticks (Impact) */}
+        {impactTicks.map((t) => (
+          <g key={`ey-${t}`}>
+            <line x1={PAD.left - 4} y1={toY(t)} x2={PAD.left} y2={toY(t)}
+              stroke="var(--brand-600)" strokeWidth={1} />
+            <text x={PAD.left - 7} y={toY(t) + 4}
+              textAnchor="end" fontSize={10} fill="var(--text-quaternary)"
+              style={{ fontVariantNumeric: "tabular-nums" }}>
+              {t}
+            </text>
+          </g>
+        ))}
+
+        {/* Axis labels */}
+        <text
+          x={PAD.left + plotW / 2} y={H - 4}
+          textAnchor="middle" fontSize={11} fontWeight={600} fill="var(--brand-600)"
+        >
+          Effort (pm)
+        </text>
+        <text
+          x={14} y={PAD.top + plotH / 2}
+          textAnchor="middle" fontSize={11} fontWeight={600} fill="var(--brand-600)"
+          transform={`rotate(-90, 14, ${PAD.top + plotH / 2})`}
+        >
+          Impact
+        </text>
+
+        {/* Dots */}
+        {plottable.map((item) => {
+          const cx = toX(item.effort);
+          const cy = toY(item.impact as number);
+          const r = dotR(item.score ?? null);
+          const isHov = hovered === item.id;
+          return (
+            <g key={item.id}>
+              <circle
+                cx={cx} cy={cy} r={r + 4}
+                fill="transparent"
+                style={{ cursor: "pointer" }}
+                tabIndex={0}
+                role="button"
+                aria-label={`${item.name} — score ${formatScore(item.score)}`}
+                onClick={() => onItemClick(item.id)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onItemClick(item.id); } }}
+                onMouseEnter={() => setHovered(item.id)}
+                onMouseLeave={() => setHovered(null)}
+                onFocus={() => setHovered(item.id)}
+                onBlur={() => setHovered(null)}
+              />
+              <circle
+                cx={cx} cy={cy} r={r}
+                fill={isHov ? "var(--brand-600)" : "var(--gray-400)"}
+                stroke={isHov ? "var(--brand-700)" : "var(--gray-200)"}
+                strokeWidth={1.5}
+                style={{ pointerEvents: "none", transition: "fill 100ms, r 100ms" }}
+              />
+              {/* Label on hover/focus */}
+              {isHov && (
+                <g>
+                  <rect
+                    x={cx + r + 4} y={cy - 18}
+                    width={Math.min(item.name.length * 6.5 + 60, 200)} height={34}
+                    rx={4}
+                    fill="var(--gray-900)"
+                    style={{ pointerEvents: "none" }}
+                  />
+                  <text
+                    x={cx + r + 10} y={cy - 4}
+                    fontSize={11} fill="#fff"
+                    fontFamily="var(--font-mono)"
+                    style={{ pointerEvents: "none" }}
+                  >
+                    {item.name.length > 22 ? item.name.slice(0, 22) + "…" : item.name}
+                  </text>
+                  <text
+                    x={cx + r + 10} y={cy + 10}
+                    fontSize={10} fill="var(--gray-300)"
+                    style={{ pointerEvents: "none", fontVariantNumeric: "tabular-nums" }}
+                  >
+                    score {formatScore(item.score)}
+                  </text>
+                </g>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Buckets view (Now / Soon / Later)                                   */
+/* ------------------------------------------------------------------ */
+
+interface BucketsViewProps {
+  items: RiceItem[];
+  onItemClick: (id: string) => void;
+}
+
+function BucketsView({ items, onItemClick }: BucketsViewProps) {
+  // Partition into scored / null-score
+  const scoredItems = useMemo(() => items.filter((i) => i.score != null), [items]);
+
+  const BUCKETS: Bucket[] = ["Now", "Soon", "Later"];
+
+  const grouped = useMemo<Record<Bucket, RiceItem[]>>(() => {
+    const out: Record<Bucket, RiceItem[]> = { Now: [], Soon: [], Later: [] };
+    for (const item of items) {
+      const b = scoreBucket(item, scoredItems);
+      out[b].push(item);
+    }
+    // Within each bucket: sort score descending
+    for (const b of BUCKETS) {
+      out[b].sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity));
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, scoredItems]);
+
+  if (items.length === 0) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "64px 24px" }}>
+        <span style={{ fontSize: 14, color: "var(--text-quaternary)" }}>No items yet.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", gap: 0, padding: "18px 24px 48px", alignItems: "flex-start", overflowX: "auto" }}>
+      {BUCKETS.map((bucket, bi) => (
+        <div
+          key={bucket}
+          style={{
+            flex: 1, minWidth: 200,
+            borderLeft: bi > 0 ? "1px solid var(--gray-200)" : undefined,
+            paddingLeft: bi > 0 ? 16 : 0,
+            paddingRight: bi < BUCKETS.length - 1 ? 16 : 0,
+          }}
+        >
+          {/* Column header: text-secondary, 1px gray-200 bottom border, semibold */}
+          <div style={{
+            fontSize: 12, fontWeight: 600, color: "var(--text-secondary)",
+            borderBottom: "1px solid var(--gray-200)",
+            paddingBottom: 8, marginBottom: 10,
+          }}>
+            {bucket}
+            <span style={{
+              marginLeft: 8, fontSize: 11, fontWeight: 500,
+              color: "var(--text-quaternary)",
+            }}>
+              {grouped[bucket].length}
+            </span>
+          </div>
+
+          {/* Cards */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {grouped[bucket].map((item) => (
+              <div
+                key={item.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onItemClick(item.id)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onItemClick(item.id); } }}
+                className="eh-task-row"
+                style={{
+                  background: "var(--color-white)",
+                  border: "1px solid var(--border-secondary)",
+                  borderRadius: "var(--radius-xl)",
+                  padding: "10px 12px",
+                  cursor: "pointer",
+                  display: "flex", flexDirection: "column", gap: 6,
+                  boxShadow: "var(--shadow-xs)",
+                }}
+              >
+                {/* Name */}
+                <span style={{
+                  fontSize: 13, fontWeight: 500, color: "var(--text-primary)",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }}>
+                  {item.name}
+                </span>
+
+                {/* Score + Reach row */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span
+                    className="tnum"
+                    style={{
+                      fontSize: 16, fontWeight: 600, letterSpacing: "-0.2px",
+                      color: item.score != null ? "var(--text-primary)" : "var(--text-quaternary)",
+                      fontFamily: item.score == null ? "var(--font-mono)" : undefined,
+                    }}
+                  >
+                    {formatScore(item.score)}
+                  </span>
+                  <span style={{ fontSize: 11, color: "var(--text-quaternary)" }}>score</span>
+                  <span style={{ flex: 1 }} />
+                  <span
+                    className="tnum"
+                    style={{ fontSize: 11, color: "var(--text-quaternary)" }}
+                  >
+                    {formatReach(item.reach_value ?? item.reach_manual ?? null)}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {grouped[bucket].length === 0 && (
+              <div style={{ fontSize: 12, color: "var(--text-quaternary)", padding: "6px 0" }}>—</div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* RiceView (main export)                                              */
 /* ------------------------------------------------------------------ */
+
+const VIEW_OPTIONS: { value: RiceViewMode; label: string }[] = [
+  { value: "list",    label: "List"    },
+  { value: "matrix",  label: "Matrix"  },
+  { value: "buckets", label: "Buckets" },
+];
 
 export function RiceView() {
   const riceDrawerId = useApp((s) => s.riceDrawerId);
@@ -791,6 +1144,8 @@ export function RiceView() {
   const openTrace = useApp((s) => s.openTrace);
 
   const [search, setSearch] = useState("");
+  // View mode is local component state — no persistence needed.
+  const [viewMode, setViewMode] = useState<RiceViewMode>("list");
 
   const { data: items = [], isLoading: loading, isError, error: queryError, refetch } = useQuery({
     queryKey: queryKeys.rice,
@@ -881,10 +1236,17 @@ export function RiceView() {
 
       {/* top bar */}
       <div style={{
-        display: "flex", alignItems: "center", gap: 10,
+        display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
         padding: "11px 20px", borderBottom: "1px solid var(--border-secondary)",
         flexShrink: 0, background: "var(--surface-secondary)", zIndex: 20,
       }}>
+        {/* View toggle — List / Matrix / Buckets */}
+        <Segmented<RiceViewMode>
+          value={viewMode}
+          options={VIEW_OPTIONS}
+          onChange={setViewMode}
+        />
+
         {/* search */}
         <div style={{ position: "relative" }}>
           <Search size={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-quaternary)", pointerEvents: "none" }} />
@@ -970,7 +1332,7 @@ export function RiceView() {
           />
         )}
 
-        {!error && sortedItems.length > 0 && (
+        {!error && sortedItems.length > 0 && viewMode === "list" && (
           <div style={{ padding: "18px 24px 48px" }}>
             <div style={{
               background: "var(--color-white)", border: "1px solid var(--border-secondary)",
@@ -987,6 +1349,20 @@ export function RiceView() {
               ))}
             </div>
           </div>
+        )}
+
+        {!error && viewMode === "matrix" && (
+          <MatrixView
+            items={sortedItems}
+            onItemClick={(id) => openRiceDrawer(id)}
+          />
+        )}
+
+        {!error && viewMode === "buckets" && (
+          <BucketsView
+            items={sortedItems}
+            onItemClick={(id) => openRiceDrawer(id)}
+          />
         )}
       </div>
 

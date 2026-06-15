@@ -37,7 +37,7 @@ import type { Metric } from "./data";
 import type { MetricOut } from "./api";
 import { queryKeys, hypothesesQueryFn, bootstrapQueryFn, invalidate, findReportForMetric } from "./queries";
 import {
-  Badge, Button, IconButton, EmptyState, ErrorBanner, Tooltip, Segmented, Drawer,
+  Badge, Button, IconButton, EmptyState, ErrorBanner, Tooltip, Segmented, Drawer, Sparkline,
 } from "./ui";
 import { relativeTime } from "./lib/time";
 import { useTraceForLogic } from "./hooks/useTraceForLogic";
@@ -72,6 +72,14 @@ function statusTone(status: string): "neutral" | "info" | "success" | "danger" {
   if (status === "testing") return "info";
   if (status === "confirmed") return "success";
   return "danger";
+}
+
+/** Sparkline color mirrors the hypothesis status — validation-loop signal. */
+function hypSparklineColor(status: string): string {
+  if (status === "confirmed") return "var(--success-500)";
+  if (status === "rejected") return "var(--error-500)";
+  if (status === "testing") return "var(--warning-500)";
+  return "var(--gray-300)"; // proposed
 }
 
 function statusLabel(status: string): string {
@@ -181,6 +189,11 @@ function HypothesisRow({
 }) {
   const { short, full } = relativeTime(hyp.created_at);
   const hasMetric = !!hyp.logic_id;
+  // Sparkline: show when linked metric has a non-empty series from the engine.
+  const hasSpark = hasMetric && Array.isArray(hyp.spark) && hyp.spark.length > 1;
+  // prefers-reduced-motion: render static final-point dot instead of the line.
+  const prefersReduced = typeof window !== "undefined"
+    && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   return (
     <div
@@ -218,6 +231,26 @@ function HypothesisRow({
         </div>
         {hasMetric && <MetricChip logicId={hyp.logic_id} />}
       </div>
+
+      {/* sparkline — validation-loop trend, status-colored */}
+      {hasSpark && (
+        <div style={{ flexShrink: 0, alignSelf: "center" }} aria-hidden="true">
+          {prefersReduced ? (
+            // reduced-motion: static final-point dot
+            <div style={{
+              width: 6, height: 6, borderRadius: "var(--radius-full)",
+              background: hypSparklineColor(hyp.status),
+            }} />
+          ) : (
+            <Sparkline
+              data={hyp.spark}
+              w={64}
+              h={28}
+              color={hypSparklineColor(hyp.status)}
+            />
+          )}
+        </div>
+      )}
 
       {/* badges */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, paddingTop: 1 }}>
@@ -731,7 +764,7 @@ function HypothesisDetailDrawer({
                   </button>
                 )}
               </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <span
                   className="tnum"
                   style={{
@@ -742,6 +775,17 @@ function HypothesisDetailDrawer({
                 >
                   {isStale ? "—" : liveValue}
                 </span>
+                {/* Drawer sparkline: show trend alongside the live value */}
+                {!isStale && Array.isArray(hyp.spark) && hyp.spark.length > 1 && (
+                  <div aria-hidden="true">
+                    <Sparkline
+                      data={hyp.spark}
+                      w={80}
+                      h={32}
+                      color={hypSparklineColor(hyp.status)}
+                    />
+                  </div>
+                )}
               </div>
               {!isStale && metricName && (
                 <p style={{ fontSize: 12, color: "var(--text-quaternary)", margin: 0 }}>

@@ -8,6 +8,34 @@ fix. The git tag is the release trigger (in-app auto-update reads the published 
 
 _Nothing yet._
 
+## v0.1.7 — 2026-06-15
+
+- Left rail restyled to a compact icon-rail: each item is an icon with a small label beneath
+  it (was icon + label to the right), the rail narrows to 76px, the logo mark sits alone at the
+  top, and the collapse toggle moved to the footer. Collapsed state stays icon-only at 56px.
+  Matches the two-tier nav look in eigenheim's own LIGHT palette + Inter.
+
+- Reports uses a two-tier navigation: a contextual column lists your reports (name + status +
+  period, active highlighted, "New report") beside the rail, and the selected report opens in
+  the center; the right data panel is hidden in this section to avoid a cramped multi-column
+  layout. The other sections are unchanged (the column only appears for Reports; Chat keeps its
+  own history sidebar). Adapted from the Productboard two-tier pattern in eigenheim's own LIGHT
+  identity — no app-switcher rail, no cloned visuals.
+
+- Prioritization (RICE) gains a view toggle: **List** (the scored table), **Matrix** (an
+  Effort×Impact scatter), and **Buckets** (Now / Soon / Later columns derived deterministically
+  from the computed RICE score — highest scores in Now, no drag-to-reorder). Reach already
+  binds to a Logic formula; this adds ways to read the same scores.
+- Hypotheses show a metric **trend sparkline**: when a hypothesis is linked to a Logic metric,
+  its recent weekly series renders on the card (status-colored), so confirm/reject is visible —
+  the validation loop. Series is computed by the same deterministic path the reports use (no LLM).
+
+- Chat provider badge now detects a **missing Ollama model**, not just server reachability:
+  if Ollama is running but the selected model isn't pulled, the badge reads
+  `Local · <model> · not installed` (was a misleading `Local · <model>`), the empty state
+  says how to pull it, and a send shows a clear "model isn't installed — pull it or pick
+  another" error instead of a generic failure. Applies to both the chat page and the overlay.
+
 ## v0.1.6 — 2026-06-15
 
 - Engine startup is resilient and diagnosable: a failure in a best-effort step (backup,

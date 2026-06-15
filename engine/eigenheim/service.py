@@ -93,6 +93,39 @@ def _metric(conn: sqlite3.Connection, lg, days: int) -> dict:
     }
 
 
+# ---- Hypothesis metric-trend helper ----
+
+def hypothesis_spark(
+    conn: sqlite3.Connection,
+    logic_id: str,
+    n_weeks: int = 8,
+) -> list[float]:
+    """Return up to `n_weeks` recent weekly values for a logic_id.
+
+    Uses the same weekly_series compute the reports use — pure deterministic
+    compute over the event store, no LLM calls. Returns [] when logic_id is
+    missing or the period produces no data.
+    """
+    if not logic_id:
+        return []
+    lg = store_db.get_logic(conn, logic_id)
+    if lg is None:
+        return []
+    try:
+        end_dt = db.PERIOD_END
+        start_dt = max(end_dt - timedelta(days=n_weeks * 7), db.PERIOD_START)
+        start = start_dt.strftime("%Y-%m-%d %H:%M:%S")
+        end = end_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+        def resolve(lid):
+            return store_db.get_logic(conn, lid)
+
+        _, series = weekly_series(conn, lg, start, end, resolve)
+        return series[-n_weeks:]
+    except Exception:
+        return []
+
+
 # ---- Collect report ----
 
 def collect_report(conn: sqlite3.Connection, report_id: str, frequency: str) -> int | None:

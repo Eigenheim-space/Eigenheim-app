@@ -213,6 +213,8 @@ export function ChatOverlay() {
                 <Badge tone="neutral">Agent · MCP</Badge>
               ) : ollamaReach === "unreachable" ? (
                 <Badge tone="danger">Local · not connected</Badge>
+              ) : ollamaReach === "model-missing" ? (
+                <Badge tone="warning">Local · {chatOllamaModel} · not installed</Badge>
               ) : (
                 <Badge tone="info" dot={ollamaReach === "reachable"}>
                   Local · {chatOllamaModel}
@@ -263,6 +265,8 @@ export function ChatOverlay() {
                 ? "External agent mode. Use your desktop agent over MCP — eigenheim does not route messages from here."
                 : !isCloud && ollamaReach === "unreachable"
                 ? "Ollama is not running. Start it locally, or switch to a different provider in Settings → AI Chat."
+                : !isCloud && ollamaReach === "model-missing"
+                ? `Model "${chatOllamaModel}" isn't pulled. Run: ollama pull ${chatOllamaModel}`
                 : openReportId
                 ? "Ask about this report's metrics, trends, or cohorts."
                 : "No report open. Ask a product question or open a report first."}
