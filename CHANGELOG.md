@@ -8,6 +8,22 @@ fix. The git tag is the release trigger (in-app auto-update reads the published 
 
 _Nothing yet._
 
+## v0.1.5 — 2026-06-15
+
+- First-run onboarding now auto-shows once: on a fresh launch with no data source
+  configured and onboarding not yet seen, the welcome → connect → sync → coach → MCP-key
+  flow opens. Every step is skippable; after finish or skip it is marked seen
+  (`localStorage`) and never auto-shows again. Settings → About gains a "Run setup again"
+  entry to reopen it on demand.
+- Reports can be renamed, duplicated, and deleted from a card menu (`PATCH` / `POST
+  …/duplicate` / `DELETE` on the engine, with cascade to snapshots; deleting a seeded
+  default does not reappear on the next launch). The menu portals to the body and clamps
+  to the viewport so it is never clipped at a screen edge.
+- Fixed a CORS regression: the engine allowed only `GET/POST/DELETE`, so every `PATCH`
+  preflight was rejected (400) and silently broke report rename plus the objective / key
+  result / decision / RICE / hypothesis-status updates. The sidecar now allows all methods
+  (the origin allowlist is the real boundary); added a preflight regression test.
+
 ## v0.1.4 — 2026-06-15
 
 English-first, all the way down. The English-first UI decision had only reached the

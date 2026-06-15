@@ -113,6 +113,9 @@ from .store.reports_repo import (  # noqa: E402
     list_report_defs,
     get_report_def,
     create_report,
+    update_report,
+    delete_report,
+    duplicate_report,
     save_snapshot,
     latest_snapshot,
 )

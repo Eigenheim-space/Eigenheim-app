@@ -8,7 +8,7 @@ from .. import adapters, service, store_db
 from ..service import _NAMES, _metric, _snap_status
 from .deps import _auth
 from .logic import _slug
-from .models import CollectOut, IngestOut, ReportCreateOut, ReportListItem, ReportOut
+from .models import CollectOut, IngestOut, ReportCreateOut, ReportDeleteOut, ReportListItem, ReportOut
 
 router = APIRouter()
 
@@ -20,6 +20,16 @@ class ReportIn(BaseModel):
     name: str
     period_days: int = 30
     logic_ids: list[str]
+
+
+class ReportPatchIn(BaseModel):
+    name: str | None = None
+    period_days: int | None = None
+    logic_ids: list[str] | None = None
+
+
+class ReportDuplicateIn(BaseModel):
+    name: str | None = None
 
 
 class CollectIn(BaseModel):
@@ -92,6 +102,66 @@ def create_report(body: ReportIn, request: Request, authorization: str | None = 
     _auth(authorization)
     rid = body.id or _slug(body.name)
     r = store_db.create_report(request.app.state.conn, rid, body.name, body.period_days, body.logic_ids)
+    return {"id": r.id, "name": r.name, "period": f"{r.period_days}d"}
+
+
+@router.patch("/reports/{report_id}", response_model=ReportCreateOut)
+def patch_report(
+    report_id: str,
+    body: ReportPatchIn,
+    request: Request,
+    authorization: str | None = Header(None),
+):
+    _auth(authorization)
+    conn = request.app.state.conn
+    r = store_db.update_report(
+        conn, report_id,
+        name=body.name,
+        period_days=body.period_days,
+        logic_ids=body.logic_ids,
+    )
+    if r is None:
+        raise HTTPException(404, "report not found")
+    return {"id": r.id, "name": r.name, "period": f"{r.period_days}d"}
+
+
+@router.delete("/reports/{report_id}", response_model=ReportDeleteOut)
+def delete_report(
+    report_id: str,
+    request: Request,
+    authorization: str | None = Header(None),
+):
+    _auth(authorization)
+    conn = request.app.state.conn
+    ok = store_db.delete_report(conn, report_id)
+    if not ok:
+        raise HTTPException(404, "report not found")
+    return {"ok": True}
+
+
+@router.post("/reports/{report_id}/duplicate", response_model=ReportCreateOut)
+def duplicate_report(
+    report_id: str,
+    request: Request,
+    body: ReportDuplicateIn = Body(default=ReportDuplicateIn()),
+    authorization: str | None = Header(None),
+):
+    _auth(authorization)
+    conn = request.app.state.conn
+    src = store_db.get_report_def(conn, report_id)
+    if src is None:
+        raise HTTPException(404, "report not found")
+    base_name = body.name or f"{src.name} copy"
+    # Build a unique slug: try base, then base-2, base-3, …
+    candidate = _slug(base_name)
+    new_rid = candidate
+    suffix = 2
+    while store_db.get_report_def(conn, new_rid) is not None:
+        new_rid = f"{candidate}-{suffix}"
+        suffix += 1
+    r = store_db.duplicate_report(conn, report_id, new_rid, base_name)
+    if r is None:
+        raise HTTPException(404, "report not found")
     return {"id": r.id, "name": r.name, "period": f"{r.period_days}d"}
 
 

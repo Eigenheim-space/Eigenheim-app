@@ -176,6 +176,10 @@ class ReportCreateOut(BaseModel):
     period: str
 
 
+class ReportDeleteOut(BaseModel):
+    ok: bool
+
+
 class CollectOut(BaseModel):
     snapshot_id: int
     collected: int

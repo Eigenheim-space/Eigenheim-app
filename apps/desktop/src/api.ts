@@ -147,6 +147,11 @@ export const api = {
   syncs: () => get<SyncOut[]>("/syncs"),
   collect: (id: string, frequency: string) => post<CollectOut>(`/reports/${id}/collect`, { frequency }),
   createReport: (p: ReportPayload) => post<ReportCreateOut>("/reports", p),
+  updateReport: (id: string, patch: { name?: string; period_days?: number; logic_ids?: string[] }) =>
+    _patch<ReportCreateOut>(`/reports/${id}`, patch),
+  deleteReport: (id: string) => _del<{ ok: boolean }>(`/reports/${id}`),
+  duplicateReport: (id: string, name?: string) =>
+    post<ReportCreateOut>(`/reports/${id}/duplicate`, name !== undefined ? { name } : {}),
   createLogic: (p: LogicPayload) => post<LogicCreateOut>("/logic", p),
   testPosthog: (host: string, projectId: string, apiKey: string) => post<{ ok: boolean; events_visible: number }>("/datasources/posthog/test", { host, project_id: projectId, api_key: apiKey }),
   syncPosthog: (host: string, projectId: string, apiKey: string, days = 30) => post<{ ingested: number }>("/datasources/posthog/sync", { host, project_id: projectId, api_key: apiKey, days }),

@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useApp } from "./store";
+import { useApp, onboardingSeen, markOnboardingSeen } from "./store";
+import { secrets } from "./secrets";
 import { LeftRail, RightPanel, BootState, EngineFailure } from "./shell";
 import { ReportsGrid, ReportView } from "./reports";
 import { Settings } from "./settings";
@@ -32,6 +33,7 @@ export function App() {
   const setTrackerCount = useApp((s) => s.setTrackerCount);
   const setUpdater = useApp((s) => s.setUpdater);
   const setAppVersion = useApp((s) => s.setAppVersion);
+  const startOnboarding = useApp((s) => s.startOnboarding);
 
   // Subscribe to in-app update status + load the real app version (Electron only).
   useEffect(() => {
@@ -69,6 +71,29 @@ export function App() {
   useEffect(() => {
     if (bootstrapErr) { setEngineLive(false); setEngine("failed"); }
   }, [bootstrapErr, setEngineLive, setEngine]);
+
+  // Auto-show onboarding exactly once on first run.
+  // Latch ensures the check never re-fires on re-renders even if bootstrapOk
+  // flickers; the seen flag in localStorage prevents re-triggering across launches.
+  const obChecked = useRef(false);
+  useEffect(() => {
+    if (!bootstrapOk) return;
+    if (obChecked.current) return;
+    obChecked.current = true;
+
+    async function checkFirstRun() {
+      if (onboardingSeen()) return;
+      // Источник уже настроен — не тревожим, просто помечаем seen
+      const sources = await secrets.listSources().catch(() => []);
+      if (sources.length > 0) {
+        markOnboardingSeen();
+        return;
+      }
+      startOnboarding();
+    }
+
+    checkFirstRun();
+  }, [bootstrapOk, startOnboarding]);
 
   // Tracker count: used only for the Tasks rail gate.
   useQuery({

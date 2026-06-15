@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, ArrowUpRight, ArrowDownRight, ArrowLeft, TrendingUp, X, Search } from "lucide-react";
+import { Plus, ArrowUpRight, ArrowDownRight, ArrowLeft, TrendingUp, X, Search, MoreHorizontal } from "lucide-react";
 import { useApp } from "./store";
 import { api, type ReportCreateOut } from "./api";
 import { type Report, type Metric } from "./data";
@@ -74,27 +75,284 @@ export function ReportsGrid() {
   );
 }
 
-/* Card menu (rename/duplicate/delete) is removed — those mutations have no
-   backend endpoints yet. The button would show a menu that lies about its
-   ability to do anything. Removed until the endpoints exist. */
-function ReportCard({ report, onOpen }: { report: Report; onOpen: () => void }) {
-  return (
+/* ---------------- Card kebab dropdown ---------------- */
+
+interface CardMenuProps {
+  anchorRef: React.RefObject<HTMLDivElement | null>;
+  open: boolean;
+  onClose: () => void;
+  onRename: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+}
+
+function CardMenu({ anchorRef, open, onClose, onRename, onDuplicate, onDelete }: CardMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+
+  // Measure the anchor + rendered menu, then clamp/flip into the viewport so the
+  // menu is never clipped at a screen edge (same approach as the Tooltip primitive).
+  useLayoutEffect(() => {
+    if (!open || !anchorRef.current || !menuRef.current) return;
+    const a = anchorRef.current.getBoundingClientRect();
+    const m = menuRef.current.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const MARGIN = 8, GAP = 4;
+    let left = a.right - m.width;                                  // right-align under the kebab
+    left = Math.max(MARGIN, Math.min(left, vw - m.width - MARGIN)); // keep on-screen horizontally
+    let top = a.bottom + GAP;                                       // prefer below the anchor
+    if (top + m.height > vh - MARGIN) {                             // flip above if no room below
+      const above = a.top - m.height - GAP;
+      top = above >= MARGIN ? above : Math.max(MARGIN, vh - m.height - MARGIN);
+    }
+    setPos({ top, left });
+  }, [open, anchorRef]);
+
+  // Reset position on close so a reopen re-measures instead of flashing at the old spot.
+  useEffect(() => { if (!open) setPos(null); }, [open]);
+
+  // Close on outside-click.
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node) &&
+          anchorRef.current && !anchorRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open, onClose, anchorRef]);
+
+  // Close on Escape.
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const itemStyle: React.CSSProperties = {
+    display: "block", width: "100%", padding: "8px 14px", textAlign: "left", border: "none",
+    background: "transparent", cursor: "pointer", fontSize: 13, fontFamily: "var(--font-sans)",
+    color: "var(--text-primary)",
+  };
+
+  return createPortal(
     <div
-      role="button" tabIndex={0} onClick={onOpen} onKeyDown={(e) => e.key === "Enter" && onOpen()}
-      style={{ ...cardBase, padding: 16, minHeight: 132, cursor: "pointer", display: "flex", flexDirection: "column", position: "relative" }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-xs)"; e.currentTarget.style.transform = "none"; }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 16, fontWeight: 600, flex: 1 }}>{report.name}</span>
-        <StatusBadge kind={report.status} />
+      ref={menuRef}
+      style={{
+        position: "fixed",
+        top: pos ? pos.top : 0,
+        left: pos ? pos.left : 0,
+        visibility: pos ? "visible" : "hidden", // hide for the pre-measure frame
+        width: 160,
+        background: "var(--color-white)",
+        border: "1px solid var(--border-secondary)",
+        borderRadius: "var(--radius)",
+        boxShadow: "var(--shadow-lg)",
+        zIndex: 200,
+        overflow: "hidden",
+      }}
+    >
+      <button
+        style={itemStyle}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--gray-50)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+        onClick={() => { onClose(); onRename(); }}
+      >
+        Rename
+      </button>
+      <button
+        style={itemStyle}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--gray-50)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+        onClick={() => { onClose(); onDuplicate(); }}
+      >
+        Duplicate
+      </button>
+      <div style={{ height: 1, background: "var(--border-tertiary)", margin: "2px 0" }} />
+      <button
+        style={{ ...itemStyle, color: "var(--error-600)" }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--error-50)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+        onClick={() => { onClose(); onDelete(); }}
+      >
+        Delete
+      </button>
+    </div>,
+    document.body,
+  );
+}
+
+/* ---------------- Rename modal ---------------- */
+function RenameModal({ report, onClose, onSaved }: { report: Report; onClose: () => void; onSaved: () => void }) {
+  const [name, setName] = useState(report.name);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const nameErr = !name.trim();
+
+  const handleSave = async () => {
+    if (nameErr) return;
+    setSaving(true); setErr(null);
+    try {
+      await api.updateReport(report.id, { name: name.trim() });
+      await invalidate.bootstrap();
+      onSaved();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal title="Rename report" onClose={onClose} width={400}>
+      <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+        <Field label="Name" error={nameErr && name !== report.name ? "Name is required" : undefined}>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+            onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
+          />
+        </Field>
+        {err && <ErrorBanner component="Report" process="rename stopped" detail={err} />}
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button hierarchy="primary" disabled={nameErr || saving} onClick={() => void handleSave()}>
+            {saving ? "Saving…" : "Save"}
+          </Button>
+          <Button hierarchy="tertiary" onClick={onClose} disabled={saving}>Cancel</Button>
+        </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
-        {periodChip(report.period)}
-        <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{report.metricCount ?? report.metrics.length} metrics</span>
+    </Modal>
+  );
+}
+
+/* ---------------- Delete confirm modal ---------------- */
+function DeleteModal({ report, onClose, onDeleted }: { report: Report; onClose: () => void; onDeleted: () => void }) {
+  const [deleting, setDeleting] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    setDeleting(true); setErr(null);
+    try {
+      await api.deleteReport(report.id);
+      await invalidate.bootstrap();
+      onDeleted();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "delete failed");
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <Modal title="Delete report" onClose={onClose} width={420}>
+      <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+        <p style={{ margin: 0, fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+          Delete report <strong>{report.name}</strong>? This removes its snapshots. This can't be undone.
+        </p>
+        {err && <ErrorBanner component="Report" process="delete stopped" detail={err} />}
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button hierarchy="danger" disabled={deleting} onClick={() => void handleDelete()}>
+            {deleting ? "Deleting…" : "Delete"}
+          </Button>
+          <Button hierarchy="tertiary" onClick={onClose} disabled={deleting}>Cancel</Button>
+        </div>
       </div>
-      <span style={{ flex: 1 }} />
-      <div className="tnum" style={{ fontSize: 12, color: "var(--text-quaternary)", marginTop: 12 }}>{report.lastBuilt ? `built ${report.lastBuilt}` : "not built yet"}</div>
-    </div>
+    </Modal>
+  );
+}
+
+/* ---------------- Report card ---------------- */
+function ReportCard({ report, onOpen }: { report: Report; onOpen: () => void }) {
+  const openReport = useApp((s) => s.openReport);
+  const openReportId = useApp((s) => s.openReportId);
+  const goReports = useApp((s) => s.goReports);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [dupError, setDupError] = useState<string | null>(null);
+  const kebabRef = useRef<HTMLDivElement>(null);
+
+  const handleDuplicate = useCallback(async () => {
+    setDupError(null);
+    try {
+      const result: ReportCreateOut = await api.duplicateReport(report.id);
+      await invalidate.bootstrap();
+      openReport(result.id);
+    } catch (e) {
+      setDupError(e instanceof Error ? e.message : "duplicate failed");
+    }
+  }, [report.id, openReport]);
+
+  return (
+    <>
+      <div
+        role="button" tabIndex={0}
+        onClick={onOpen}
+        onKeyDown={(e) => e.key === "Enter" && onOpen()}
+        style={{ ...cardBase, padding: 16, minHeight: 132, cursor: "pointer", display: "flex", flexDirection: "column", position: "relative" }}
+        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-xs)"; e.currentTarget.style.transform = "none"; }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 16, fontWeight: 600, flex: 1 }}>{report.name}</span>
+          <StatusBadge kind={report.status} />
+          <div ref={kebabRef} style={{ display: "inline-flex", flexShrink: 0 }}>
+            <IconButton
+              label="Report options"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+              style={{ width: 28, height: 28 }}
+            >
+              <MoreHorizontal size={15} />
+            </IconButton>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+          {periodChip(report.period)}
+          <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>{report.metricCount ?? report.metrics.length} metrics</span>
+        </div>
+        <span style={{ flex: 1 }} />
+        <div className="tnum" style={{ fontSize: 12, color: "var(--text-quaternary)", marginTop: 12 }}>{report.lastBuilt ? `built ${report.lastBuilt}` : "not built yet"}</div>
+        {dupError && (
+          <div style={{ position: "absolute", bottom: 8, left: 12, right: 12, fontSize: 12, color: "var(--error-600)" }}>
+            {dupError}
+          </div>
+        )}
+      </div>
+
+      <CardMenu
+        anchorRef={kebabRef}
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onRename={() => setRenaming(true)}
+        onDuplicate={() => void handleDuplicate()}
+        onDelete={() => setDeleting(true)}
+      />
+
+      {renaming && (
+        <RenameModal
+          report={report}
+          onClose={() => setRenaming(false)}
+          onSaved={() => setRenaming(false)}
+        />
+      )}
+
+      {deleting && (
+        <DeleteModal
+          report={report}
+          onClose={() => setDeleting(false)}
+          onDeleted={() => {
+            setDeleting(false);
+            // If this report is currently open in detail view, go back to the list.
+            if (openReportId === report.id) goReports();
+          }}
+        />
+      )}
+    </>
   );
 }
 

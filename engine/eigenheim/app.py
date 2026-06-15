@@ -89,7 +89,10 @@ app = FastAPI(title="eigenheim engine", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3020", "http://127.0.0.1:3020"],
-    allow_methods=["GET", "POST", "DELETE"],
+    # Local sidecar: the origin list is the real boundary, so allow every method
+    # (PATCH was missing here, which 400'd the report-rename + objective/decision/rice
+    # update preflights). "*" keeps a new verb from silently breaking a mutation again.
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 

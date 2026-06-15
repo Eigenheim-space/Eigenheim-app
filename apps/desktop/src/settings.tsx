@@ -632,12 +632,25 @@ function Updates() {
 }
 
 function About() {
+  const startOnboarding = useApp((s) => s.startOnboarding);
   return (
     <div>
       <H>About</H>
       <div style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.7, maxWidth: 560 }}>
         <p style={{ marginTop: 0 }}>eigenheim is a local desktop app that gives you one definite state of your product metrics. Formulas are validated once, computation is deterministic, and there are zero LLM calls in the core.</p>
         <div className="tnum" style={{ fontSize: 13, color: "var(--text-quaternary)", marginTop: 12 }}>v0.1.0 · PolyForm Noncommercial 1.0.0 · eigenheim.space</div>
+      </div>
+
+      <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid var(--border-secondary)", maxWidth: 560 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>Run setup again</div>
+            <div style={{ fontSize: 13, color: "var(--text-tertiary)", marginTop: 3 }}>
+              Reopen the first-run setup (connect a source, validate a formula, create an MCP key).
+            </div>
+          </div>
+          <Button hierarchy="secondary" onClick={startOnboarding}>Run setup</Button>
+        </div>
       </div>
     </div>
   );

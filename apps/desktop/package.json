@@ -1,7 +1,7 @@
 {
   "name": "@eigenheim/desktop",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "eigenheim — deterministic product metrics for PMs",
   "author": "Nikita Yurtayev",
   "type": "module",

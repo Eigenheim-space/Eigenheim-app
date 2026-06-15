@@ -1,6 +1,26 @@
 import { create } from "zustand";
 import type { ChatMessage, ProviderKind } from "./chat/providers";
 
+// ─── Onboarding persistence (localStorage, survives restarts) ─────────────────
+// Fail-safe: treat localStorage errors as "seen" so we never nag on an error.
+const OB_SEEN_KEY = "eigenheim.onboardingSeen";
+
+export function onboardingSeen(): boolean {
+  try {
+    return localStorage.getItem(OB_SEEN_KEY) === "1";
+  } catch {
+    return true; // sandboxed / unavailable — don't nag
+  }
+}
+
+export function markOnboardingSeen(): void {
+  try {
+    localStorage.setItem(OB_SEEN_KEY, "1");
+  } catch {
+    // игнорируем: если localStorage недоступен, просто не помечаем
+  }
+}
+
 export type EngineState = "booting" | "ready" | "failed";
 export type RightTab = "events" | "logic" | "syncs" | "tasks";
 export type View = "reports" | "report" | "settings" | "tasks" | "goals" | "hypotheses" | "decisions" | "graph" | "rice";
@@ -204,7 +224,10 @@ export const useApp = create<AppState>((set, get) => ({
   },
   dismissCoach: () => set({ obStep: "mcpkey", coachIndex: 0 }),
   connectDataSource: () => set({ dataSourceConnected: true, obStep: "sync" }),
-  finishOnboarding: () => set({ obStep: null, firstRun: false, dataSourceConnected: true }),
+  finishOnboarding: () => {
+    markOnboardingSeen();
+    set({ obStep: null, firstRun: false, dataSourceConnected: true });
+  },
   toggleFirstRun: () => {
     const fr = !get().firstRun;
     if (fr) set({ firstRun: true, obStep: "welcome", dataSourceConnected: false, coachIndex: 0, view: "reports" });
