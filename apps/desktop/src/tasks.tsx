@@ -37,7 +37,6 @@ import { useApp } from "./store";
 import { api, type TaskRow, type TasksByGoalGroup, type TrackerRow } from "./api";
 import { secrets } from "./secrets";
 import { Badge, Button, IconButton, Sparkline, EmptyState, ErrorBanner, Tooltip, Segmented, Drawer } from "./ui";
-import { ChatAffordance } from "./chat/ChatOverlay";
 import { queryKeys, bootstrapQueryFn, trackersQueryFn, tasksQueryFn, tasksByGoalQueryFn, invalidate } from "./queries";
 import { relativeTime } from "./lib/time";
 import { useTraceForLogic } from "./hooks/useTraceForLogic";
@@ -1041,7 +1040,6 @@ export function TasksView() {
             onChange={(v) => setTasksView(v as "by-goal" | "all")}
           />
           <span style={{ flex: 1 }} />
-          <ChatAffordance />
           <ConnectionsHealth trackers={trackers} onAddTracker={() => setShowConnect(true)} />
         </div>
 

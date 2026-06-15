@@ -329,9 +329,12 @@ function AiChat() {
     chatOllamaModel, setChatOllamaModel,
     chatOpenRouterModel, setChatOpenRouterModel,
     chatHasCloudKey, setChatHasCloudKey,
+    chatEgressConfirmedThisSession, setChatEgressConfirmed,
   } = useApp();
 
   // Option A — Cloud
+  // Controls the inline egress disclosure shown before activating openrouter as default.
+  const [showEgressConfirm, setShowEgressConfirm] = useState(false);
   const [cloudKey, setCloudKey] = useState("");
   const [cloudState, setCloudState] = useState<"idle" | "testing" | "ok" | "error">("idle");
   const [cloudMsg, setCloudMsg] = useState("");
@@ -439,13 +442,53 @@ function AiChat() {
                 </Field>
               )}
               <div style={{ display: "flex", gap: 8 }}>
-                <Button hierarchy="primary" size="sm" onClick={() => { setChatProvider("openrouter"); }}>
+                <Button
+                  hierarchy="primary"
+                  size="sm"
+                  onClick={() => {
+                    // Gate cloud activation with per-session egress disclosure.
+                    // chatEgressConfirmedThisSession is intentionally NOT persisted —
+                    // persisting it would defeat the per-session disclosure requirement.
+                    if (!chatEgressConfirmedThisSession) {
+                      setShowEgressConfirm(true);
+                    } else {
+                      setChatProvider("openrouter");
+                    }
+                  }}
+                >
                   Set as default
                 </Button>
                 <Button hierarchy="tertiary" size="sm" style={{ color: "var(--error-600)" }} onClick={removeCloud}>
                   Remove key
                 </Button>
               </div>
+              {showEgressConfirm && (
+                <div style={{ marginTop: 12, padding: "12px 14px", border: "1px solid var(--error-200)", borderRadius: 10, background: "var(--error-50)" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--error-700)", marginBottom: 6 }}>
+                    Data leaves your machine
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 10 }}>
+                    Your messages and the report metric values go to OpenRouter.
+                    Your formulas and source keys stay local.
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <Button
+                      hierarchy="danger"
+                      size="sm"
+                      onClick={() => {
+                        setChatEgressConfirmed(true);
+                        setChatProvider("openrouter");
+                        setShowEgressConfirm(false);
+                      }}
+                    >
+                      Confirm — set as default
+                    </Button>
+                    <Button hierarchy="secondary" size="sm" onClick={() => setShowEgressConfirm(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

@@ -178,3 +178,13 @@ from .store.command_center import (  # noqa: E402
     update_rice_item,
     delete_rice_item,
 )
+
+# Chat conversation persistence (LOCAL ONLY — never exported or synced).
+from .store.chat_repo import (  # noqa: E402
+    list_conversations,
+    get_conversation,
+    create_conversation,
+    append_message,
+    rename_conversation,
+    delete_conversation,
+)

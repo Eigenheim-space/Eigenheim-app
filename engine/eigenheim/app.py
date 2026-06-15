@@ -10,6 +10,7 @@ Business logic lives in service.py; routes live in api/*.
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import pathlib
 from contextlib import asynccontextmanager
@@ -21,6 +22,8 @@ from . import db, scheduler, store_db
 from .api.deps import _auth, _auth_state  # re-exported so tests can monkeypatch appmod._auth_state
 from .service import _snap_status  # re-exported so tests can call appmod._snap_status(...)
 from .api.tasks import _tracker_health  # re-exported so tests can import from eigenheim.app
+
+log = logging.getLogger(__name__)
 
 # PERIOD_END alias kept for any code that imported it from here directly.
 PERIOD_END = db.PERIOD_END
@@ -60,26 +63,57 @@ async def lifespan(app: FastAPI):
     # EIGENHEIM_DB lets tests (and CI) point at an isolated DB path without
     # touching the developer's or user's default data directory.
     db_path = os.environ.get("EIGENHEIM_DB") or None
+    # CRITICAL path — failures here mean the engine cannot serve anything useful.
+    # Let them propagate so uvicorn aborts with a clear traceback.
     conn = db.connect(db_path)
     db.init_schema(conn)  # production starts empty; no sample events (data comes from synced sources)
     store_db.ensure_schema(conn)
     store_db.seed_defaults(conn)
+
+    # BEST-EFFORT steps — a failure in any of these must NOT prevent the engine
+    # from reaching "serving" and answering /health. Log loudly and continue so
+    # the user can at least open the app and report diagnostics via "Copy diagnostics".
+
     # Back up before migrating so a bad migration never corrupts the only copy.
     _backup_dir = (
         pathlib.Path(db_path).parent / "backups"
         if db_path
         else db._DEFAULT_DB.parent / "backups"
     )
-    store_db.backup(conn, _backup_dir, keep_n=5)
-    store_db.run_migrations(conn)
+    try:
+        store_db.backup(conn, _backup_dir, keep_n=5)
+    except Exception:
+        log.warning("eigenheim.app lifespan: backup step failed (continuing)", exc_info=True)
+
+    try:
+        store_db.run_migrations(conn)
+    except Exception:
+        log.warning("eigenheim.app lifespan: run_migrations failed (continuing with current schema)", exc_info=True)
+
     # Wire the audit JSONL path so hash-chain events are mirrored to disk.
-    store_db._init_audit_path(db_path)
+    try:
+        store_db._init_audit_path(db_path)
+    except Exception:
+        log.warning("eigenheim.app lifespan: _init_audit_path failed (continuing)", exc_info=True)
+
     # Refresh bundled catalog rows whose content changed; user edits always win.
-    store_db.sync_bundled_catalog(conn)
+    try:
+        store_db.sync_bundled_catalog(conn)
+    except Exception:
+        log.warning("eigenheim.app lifespan: sync_bundled_catalog failed (continuing)", exc_info=True)
+
     app.state.conn = conn
-    task = asyncio.create_task(scheduler.run(conn))
+
+    try:
+        task = asyncio.create_task(scheduler.run(conn))
+    except Exception:
+        log.warning("eigenheim.app lifespan: scheduler.run task creation failed (continuing without scheduler)", exc_info=True)
+        task = None
+
     yield
-    task.cancel()
+
+    if task is not None:
+        task.cancel()
     conn.close()
 
 
@@ -98,6 +132,7 @@ app.add_middleware(
 
 # Domain routers — import here to keep router modules free of circular deps.
 from .api import (  # noqa: E402 (post-app import is intentional)
+    chat,
     datasources,
     decisions,
     goals,
@@ -122,3 +157,5 @@ app.include_router(decisions.router)
 app.include_router(rice.router)
 app.include_router(mcp_keys.router)
 app.include_router(graph.router)
+# Chat persistence: LOCAL ONLY — transcripts never leave the machine.
+app.include_router(chat.router)

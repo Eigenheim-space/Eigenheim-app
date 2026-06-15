@@ -10,6 +10,24 @@ from ._helpers import _now, _inputs_to_json, _inputs_from_json
 
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS conversations (
+  id         TEXT PRIMARY KEY,
+  title      TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_conversations_updated ON conversations(updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS messages (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  conversation_id TEXT NOT NULL,
+  role            TEXT NOT NULL,
+  content         TEXT NOT NULL,
+  meta_json       TEXT,
+  created_at      TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_messages_conv ON messages(conversation_id, id ASC);
+
 CREATE TABLE IF NOT EXISTS logic (
   id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, fmt TEXT NOT NULL,
   latest_version INTEGER NOT NULL,

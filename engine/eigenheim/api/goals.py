@@ -130,7 +130,7 @@ def create_key_result(body: KeyResultIn, request: Request, authorization: str | 
         raise HTTPException(422, f"unknown Logic '{body.logic_id}'")
     if body.comparison not in _VALID_COMPARISONS:
         raise HTTPException(422, f"comparison must be one of {sorted(_VALID_COMPARISONS)}")
-    kr = store_db.create_key_result(
+    raw = store_db.create_key_result(
         conn,
         objective_id=body.objective_id,
         name=body.name,
@@ -139,7 +139,9 @@ def create_key_result(body: KeyResultIn, request: Request, authorization: str | 
         comparison=body.comparison,
         period=body.period,
     )
-    return kr
+    # Re-fetch from DB so the dict includes created_at (create_key_result omits it).
+    kr = store_db.get_key_result(conn, raw["id"])
+    return goals_module.compute_kr(conn, kr)
 
 
 @router.get("/key-results/{kr_id}", response_model=KeyResultOut)

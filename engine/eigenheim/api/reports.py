@@ -83,6 +83,7 @@ def report_detail(
         return {
             "id": r.id, "name": r.name, "period": f"{r.period_days}d",
             "status": status, "lastBuilt": snap["collected_at"], "metrics": metrics,
+            "logic_ids": list(r.logic_ids),
         }
     status = "collecting" if snap is None else "live"
     metrics = [
@@ -94,6 +95,7 @@ def report_detail(
     return {
         "id": r.id, "name": r.name, "period": period_label,
         "status": status, "lastBuilt": "", "metrics": metrics,
+        "logic_ids": list(r.logic_ids),
     }
 
 

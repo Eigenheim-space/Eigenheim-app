@@ -6,10 +6,10 @@ import { EventsTab, LogicTab, SyncsTab, TasksFacetsTab } from "./panel";
 
 /* ---------------- Left rail ---------------- */
 export function LeftRail() {
-  const { railCollapsed, toggleRail, view, goReports, goSettings, goTasks, goGoals, goHypotheses, goDecisions, goGraph, goRice, openChat, chatOpen } = useApp();
+  const { railCollapsed, toggleRail, view, goReports, goSettings, goTasks, goGoals, goHypotheses, goDecisions, goGraph, goRice, openChat, goChat, chatOpen } = useApp();
   const w = railCollapsed ? 56 : 208;
 
-  const navItem = (active: boolean, icon: React.ReactNode, label: string, onClick: () => void) => {
+  const navItem = (active: boolean, icon: React.ReactNode, label: string, onClick: () => void, trailing?: React.ReactNode) => {
     const body = (
       <button onClick={onClick} aria-current={active} aria-label={label} style={{
         width: "100%", display: "flex", alignItems: "center", gap: 10, minHeight: 44,
@@ -23,10 +23,28 @@ export function LeftRail() {
         onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}>
         <span style={{ display: "flex" }}>{icon}</span>
         {!railCollapsed && <span style={{ flex: 1, textAlign: "left" }}>{label}</span>}
+        {!railCollapsed && trailing}
       </button>
     );
     return railCollapsed ? <Tooltip content={label}>{body}</Tooltip> : body;
   };
+
+  // ⌘K pill label shown on the Chat rail item (expanded rail only).
+  // Phase 2: rail Chat click navigates to the full chat page (goChat).
+  // ⌘K always opens the overlay (keyboard shortcut unchanged).
+  const cmdKPill = (
+    <span style={{
+      fontSize: 11, fontWeight: 600, letterSpacing: "0.02em",
+      color: "var(--text-quaternary)",
+      background: "var(--gray-100)",
+      border: "1px solid var(--border-tertiary)",
+      borderRadius: "var(--radius-sm)",
+      padding: "1px 5px",
+      lineHeight: 1.4,
+    }}>
+      ⌘K
+    </span>
+  );
 
   return (
     <div style={{ width: w, flexShrink: 0, borderRight: "1px solid var(--border-secondary)", background: "var(--surface-secondary)", display: "flex", flexDirection: "column", transition: "width 140ms ease" }}>
@@ -41,8 +59,11 @@ export function LeftRail() {
         )}
       </div>
       <div style={{ padding: railCollapsed ? "6px 10px" : "6px 12px", display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+        {/* Chat: rail click navigates to the full chat page; ⌘K opens the overlay (keyboard shortcut). */}
+        <Tooltip content="Open Chat (⌘K for quick overlay)">
+          {navItem(view === "chat" || chatOpen, <MessageCircle size={18} />, "Chat", goChat, cmdKPill)}
+        </Tooltip>
         {navItem(view === "reports" || view === "report", <ChartLine size={18} />, "Reports", goReports)}
-        {navItem(chatOpen, <MessageCircle size={18} />, "Chat", openChat)}
         {navItem(view === "tasks", <ListChecks size={18} />, "Tasks", goTasks)}
         {navItem(view === "goals", <TargetIcon size={18} />, "Goals", goGoals)}
         {navItem(view === "rice", <ListOrdered size={18} />, "Prioritization", goRice)}
@@ -158,17 +179,32 @@ export function BootState() {
 }
 export function EngineFailure() {
   const restart = useApp((s) => s.restartEngine);
-  const diag = "Engine: start stopped. The sidecar did not respond within 10s (timeout). Restart it below, or quit and reopen eigenheim.";
+
+  async function copyDiagnostics() {
+    // In packaged Electron the bridge is present and returns real diagnostics.
+    // In browser dev mode the bridge is absent — fall back to a static string.
+    if (window.eigenheim?.engineDiagnostics) {
+      try {
+        const payload = await window.eigenheim.engineDiagnostics();
+        await copyText(JSON.stringify(payload, null, 2));
+        return;
+      } catch {
+        // If the IPC call itself errors, fall through to the static fallback.
+      }
+    }
+    copyText("Engine: start stopped. The sidecar did not respond in time. No diagnostics bridge available (browser dev mode).");
+  }
+
   return (
     <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div role="alert" style={{ maxWidth: 520, width: "100%", border: "1px solid var(--error-300)", background: "var(--error-50)", borderRadius: 12, padding: 24 }}>
         <div style={{ fontSize: 16, fontWeight: 600, color: "var(--error-700)" }}>Engine: start stopped</div>
         <div style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 8, lineHeight: 1.55 }}>
-          Sidecar timeout after 10s. Restart below, or quit and reopen eigenheim.
+          The engine didn't respond in time. Restart below, or quit and reopen eigenheim.
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
           <Button hierarchy="primary" iconLeading={<RefreshCw size={15} />} onClick={restart}>Restart</Button>
-          <Button hierarchy="secondary" iconLeading={<Copy size={15} />} onClick={() => copyText(diag)}>Copy diagnostics</Button>
+          <Button hierarchy="secondary" iconLeading={<Copy size={15} />} onClick={copyDiagnostics}>Copy diagnostics</Button>
         </div>
       </div>
     </div>

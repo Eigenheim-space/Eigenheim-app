@@ -442,3 +442,65 @@ export const riceApi = {
  * Equivalent to ReportOut (which includes metrics[]).
  */
 export type EngineReport = ReportOut;
+
+// ── Chat conversation persistence ────────────────────────────────────────────
+// These transcripts are LOCAL SQLite only — never exported, never synced.
+
+export interface ConversationListItem {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConversationMessage {
+  id: number;
+  conversation_id: string;
+  role: "user" | "assistant";
+  content: string;
+  meta_json: string | null;
+  created_at: string;
+}
+
+export interface ConversationDetail {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  messages: ConversationMessage[];
+}
+
+export const chatApi = {
+  /** List all conversations, most-recently-updated first. */
+  listConversations: () =>
+    get<ConversationListItem[]>("/chat/conversations"),
+
+  /** Create a new conversation with the given title. */
+  createConversation: (title: string) =>
+    post<ConversationListItem>("/chat/conversations", { title }),
+
+  /** Get a conversation with its full message list. */
+  getConversation: (id: string) =>
+    get<ConversationDetail>(`/chat/conversations/${id}`),
+
+  /** Append a message to a conversation and bump its updated_at. */
+  appendMessage: (
+    conversationId: string,
+    role: "user" | "assistant",
+    content: string,
+    meta?: Record<string, unknown>
+  ) =>
+    post<ConversationMessage>(`/chat/conversations/${conversationId}/messages`, {
+      role,
+      content,
+      meta_json: meta ? JSON.stringify(meta) : null,
+    }),
+
+  /** Rename a conversation. */
+  renameConversation: (id: string, title: string) =>
+    _patch<ConversationListItem>(`/chat/conversations/${id}`, { title }),
+
+  /** Delete a conversation and all its messages. */
+  deleteConversation: (id: string) =>
+    _del<{ deleted: string }>(`/chat/conversations/${id}`),
+};

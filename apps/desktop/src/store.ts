@@ -23,7 +23,7 @@ export function markOnboardingSeen(): void {
 
 export type EngineState = "booting" | "ready" | "failed";
 export type RightTab = "events" | "logic" | "syncs" | "tasks";
-export type View = "reports" | "report" | "settings" | "tasks" | "goals" | "hypotheses" | "decisions" | "graph" | "rice";
+export type View = "reports" | "report" | "settings" | "tasks" | "goals" | "hypotheses" | "decisions" | "graph" | "rice" | "chat";
 export type SettingsSection = "datasources" | "apikeys" | "appearance" | "updates" | "about" | "aichat";
 export type ObStep = "welcome" | "datasource" | "sync" | "coach" | "mcpkey" | null;
 export type TasksView = "by-goal" | "all";
@@ -56,11 +56,12 @@ interface AppState {
   obStep: ObStep;
   coachIndex: number;
   dataSourceConnected: boolean;
+  obSource: { host: string; projectId: string; apiKey: string } | null;
   startOnboarding: () => void;
   setObStep: (s: ObStep) => void;
   nextCoach: () => void;
   dismissCoach: () => void;
-  connectDataSource: () => void;
+  connectDataSource: (src: { host: string; projectId: string; apiKey: string }) => void;
   finishOnboarding: () => void;
   toggleFirstRun: () => void;
 
@@ -83,6 +84,7 @@ interface AppState {
   goSettings: () => void;
   setSettingsSection: (s: SettingsSection) => void;
   goTasks: () => void;
+  goChat: () => void;
 
   // overlays
   traceMetric: { reportId: string; metricId: string } | null;
@@ -215,7 +217,8 @@ export const useApp = create<AppState>((set, get) => ({
   obStep: null,
   coachIndex: 0,
   dataSourceConnected: false,
-  startOnboarding: () => set({ obStep: "welcome", dataSourceConnected: false, coachIndex: 0 }),
+  obSource: null,
+  startOnboarding: () => set({ obStep: "welcome", dataSourceConnected: false, coachIndex: 0, obSource: null }),
   setObStep: (obStep) => set({ obStep }),
   nextCoach: () => {
     const i = get().coachIndex;
@@ -223,7 +226,7 @@ export const useApp = create<AppState>((set, get) => ({
     else set({ coachIndex: i + 1 });
   },
   dismissCoach: () => set({ obStep: "mcpkey", coachIndex: 0 }),
-  connectDataSource: () => set({ dataSourceConnected: true, obStep: "sync" }),
+  connectDataSource: (src) => set({ dataSourceConnected: true, obStep: "sync", obSource: src }),
   finishOnboarding: () => {
     markOnboardingSeen();
     set({ obStep: null, firstRun: false, dataSourceConnected: true });
@@ -250,6 +253,7 @@ export const useApp = create<AppState>((set, get) => ({
   openReport: (id) => set({ view: "report", openReportId: id }),
   goSettings: () => set({ view: "settings" }),
   setSettingsSection: (settingsSection) => set({ settingsSection }),
+  goChat: () => set({ view: "chat" }),
 
   chatOpen: false,
   openChat: () => set({ chatOpen: true }),

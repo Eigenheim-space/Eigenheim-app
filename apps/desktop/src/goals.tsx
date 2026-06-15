@@ -45,7 +45,6 @@ import {
   EmptyState, ErrorBanner, Tooltip, Segmented,
   Modal, copyText, Drawer,
 } from "./ui";
-import { ChatAffordance } from "./chat/ChatOverlay";
 import { relativeTimestamp } from "./lib/time";
 
 /* ------------------------------------------------------------------ */
@@ -1212,7 +1211,6 @@ export function GoalsView() {
         <span style={{ flex: 1 }} />
         {loading && <Loader2 size={14} color="var(--text-quaternary)" style={{ animation: "eh-spin 1s linear infinite" }} />}
         {computedLabel}
-        <ChatAffordance />
         <Button
           hierarchy="secondary"
           size="sm"

@@ -13,11 +13,11 @@
 //     extraResources. No uv or system Python required on the end-user's machine.
 //
 // Session-token handshake and /health wait are identical in both paths.
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve, join } from "node:path";
-import { mkdtempSync, writeFileSync, rmSync, existsSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, existsSync, statSync, truncateSync, appendFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { tmpdir } from "node:os";
 import { createRequire } from "node:module";
@@ -52,6 +52,51 @@ let win = null;
 let sessionToken = null;
 let tokenDir = null;
 
+// ---- Engine output capture ----
+// Rolling in-memory ring buffer of the last ENGINE_LOG_LINES lines from the
+// sidecar's stdout+stderr. Used by engine:diagnostics.
+const ENGINE_LOG_LINES = 120;
+const engineLogBuffer = [];
+// Path to the on-disk log file (set after app is ready so userData is known).
+let engineLogPath = null;
+// Engine exit info captured from the sidecar exit event.
+let engineExitCode = null;
+let engineExitSignal = null;
+// Whether /health was ever reached successfully for this launch.
+let engineHealthReached = false;
+
+// Redact Bearer tokens from a log line before storing or writing to disk.
+// Strips the 64-hex session token (if we know it) and the generic Bearer pattern.
+function redactLine(line) {
+  let out = line;
+  // Redact our specific minted token if it appears anywhere in the line.
+  if (sessionToken) {
+    out = out.split(sessionToken).join("[REDACTED]");
+  }
+  // Redact any generic Bearer header value (64-char hex).
+  out = out.replace(/Bearer\s+[a-f0-9]{64}/gi, "Bearer [REDACTED]");
+  return out;
+}
+
+const ENGINE_LOG_MAX_BYTES = 1_048_576; // 1 MB cap on the log file
+
+function appendToEngineLog(raw) {
+  const line = redactLine(raw.trimEnd());
+  // In-memory ring buffer.
+  engineLogBuffer.push(line);
+  if (engineLogBuffer.length > ENGINE_LOG_LINES) engineLogBuffer.shift();
+  // On-disk rolling log.
+  if (!engineLogPath) return;
+  try {
+    // Truncate if the file has grown past the cap before each append.
+    try {
+      const st = statSync(engineLogPath);
+      if (st.size > ENGINE_LOG_MAX_BYTES) truncateSync(engineLogPath, 0);
+    } catch { /* file may not exist yet — appendFileSync creates it */ }
+    appendFileSync(engineLogPath, line + "\n", "utf8");
+  } catch { /* log writes are best-effort; never throw */ }
+}
+
 function ping(port) {
   return new Promise((res) => {
     // /health is gated whenever a session token is configured, so the probe must
@@ -68,10 +113,10 @@ function ping(port) {
   });
 }
 
-async function waitForHealth(timeoutMs = 15000) {
+async function waitForHealth(timeoutMs = 30000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    if (await ping(enginePort)) return true;
+    if (await ping(enginePort)) { engineHealthReached = true; return true; }
     await new Promise((r) => setTimeout(r, 300));
   }
   return false;
@@ -174,22 +219,48 @@ async function startSidecar() {
   writeFileSync(tokenFile, sessionToken, { mode: 0o600 });
 
   const { cmd, args, cwd, extraEnv = {} } = resolveEngineSpawn();
-  // stdio:"inherit" forwards uvicorn output to the Electron process console, which
-  // is useful for crash diagnostics. The session token is never emitted by uvicorn
-  // (it arrives via EIGENHEIM_TOKEN_FILE and is unlinked before any log line fires;
-  // log level is "warning"). If future uvicorn middleware or debug logging ever
-  // outputs request headers, switch to piped stdio and strip /Bearer\s+[a-f0-9]{64}/
-  // before forwarding lines to console.
+  // Pipe stdout+stderr so we can capture engine output for diagnostics and redact
+  // any session token before it touches disk or the in-memory buffer. The token
+  // arrives via EIGENHEIM_TOKEN_FILE and is unlinked before uvicorn emits any log
+  // line, so under normal operation no token leaks — but we redact defensively.
   sidecar = spawn(
     cmd,
     args,
     {
       cwd,
-      stdio: "inherit",
+      stdio: ["ignore", "pipe", "pipe"],
       env: { ...process.env, ...extraEnv, EIGENHEIM_TOKEN_FILE: tokenFile },
     }
   );
-  sidecar.on("error", (e) => console.error("[engine] spawn failed:", e.message));
+
+  // Wire both streams into the ring buffer and log file.
+  function wireStream(stream) {
+    if (!stream) return;
+    let partial = "";
+    stream.setEncoding("utf8");
+    stream.on("data", (chunk) => {
+      const full = partial + chunk;
+      const lines = full.split("\n");
+      partial = lines.pop(); // last segment may be incomplete
+      for (const ln of lines) appendToEngineLog(ln);
+    });
+    stream.on("end", () => { if (partial) { appendToEngineLog(partial); partial = ""; } });
+  }
+  wireStream(sidecar.stdout);
+  wireStream(sidecar.stderr);
+
+  sidecar.on("error", (e) => {
+    appendToEngineLog(`[engine] spawn error: ${e.message}`);
+    console.error("[engine] spawn failed:", e.message);
+  });
+  sidecar.on("exit", (code, signal) => {
+    engineExitCode = code;
+    engineExitSignal = signal;
+    appendToEngineLog(`[engine] process exited: code=${code ?? "null"} signal=${signal ?? "null"}`);
+    if (!engineHealthReached) {
+      console.error(`[engine] exited before health was reached: code=${code} signal=${signal}`);
+    }
+  });
 }
 
 function cleanupToken() {
@@ -238,7 +309,46 @@ ipcMain.handle("secrets:deleteSource", (_e, id) => secrets.deleteSource(id));
 // handler kills the sidecar; relaunch starts a fresh instance.
 ipcMain.handle("app:relaunch", () => { app.relaunch(); app.exit(0); });
 
+// Engine diagnostics — returned as a JSON-safe object to the renderer's
+// "Copy diagnostics" button. Never includes the session token or any raw Bearer
+// value (lines are already redacted via appendToEngineLog / redactLine).
+ipcMain.handle("engine:diagnostics", () => ({
+  appVersion: app.getVersion(),
+  platform: process.platform,
+  arch: process.arch,
+  isPackaged: app.isPackaged,
+  enginePort,
+  engineDir: ENGINE_DIR,
+  // Spawn command omits the token; args are safe (token travels via file, not argv).
+  spawnCmd: (() => {
+    try {
+      const { cmd, args } = resolveEngineSpawn();
+      return [cmd, ...args].join(" ");
+    } catch (e) {
+      return `(could not resolve: ${e.message})`;
+    }
+  })(),
+  healthReached: engineHealthReached,
+  exitCode: engineExitCode,
+  exitSignal: engineExitSignal,
+  // Last ~120 lines from the engine; already redacted.
+  engineLog: [...engineLogBuffer],
+}));
+
+// Native folder picker — used by Graph Explorer's "Directory path" input.
+// Returns the selected path string, or null if the user cancelled.
+ipcMain.handle("dialog:openDirectory", async (event) => {
+  const browserWin = BrowserWindow.fromWebContents(event.sender) ?? win;
+  const { canceled, filePaths } = await dialog.showOpenDialog(browserWin, {
+    properties: ["openDirectory"],
+    title: "Choose a directory",
+  });
+  return canceled || filePaths.length === 0 ? null : filePaths[0];
+});
+
 app.whenReady().then(async () => {
+  // Set the log file path now that app is ready and userData is available.
+  engineLogPath = join(app.getPath("userData"), "engine.log");
   await startSidecar();
   await waitForHealth();
   createWindow();

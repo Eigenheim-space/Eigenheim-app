@@ -1588,6 +1588,14 @@ export interface components {
             lastBuilt: string;
             /** Metrics */
             metrics: components["schemas"]["MetricOut"][];
+            /**
+             * Logic Ids
+             * @description Logic formula IDs included in this report definition.
+             *   Used by the metric-add picker to avoid double-adds.
+             *   Hand-added to match engine/eigenheim/api/models.py ReportOut.logic_ids.
+             * @default []
+             */
+            logic_ids: string[];
         };
         /** RiceItemIn */
         RiceItemIn: {

@@ -42,8 +42,6 @@ import { queryKeys, decisionsListQueryFn, decisionDetailQueryFn, bootstrapQueryF
 import {
   Badge, Button, IconButton, EmptyState, ErrorBanner, Tooltip, Segmented, Drawer,
 } from "./ui";
-import { ChatAffordance } from "./chat/ChatOverlay";
-
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
 /* ------------------------------------------------------------------ */
@@ -1008,8 +1006,6 @@ function DecisionsTopBar({
             Last updated {isoDateTime(lastUpdated)}
           </span>
         )}
-
-        <ChatAffordance />
 
         {/* create button */}
         <Button

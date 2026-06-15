@@ -231,6 +231,29 @@ _MIGRATIONS: list = [
         CREATE INDEX IF NOT EXISTS ix_rice_items_logic
             ON rice_items(reach_logic_id);
     """),
+    # Migration 10 (2026-06-15): Persisted chat conversation history.
+    # LOCAL ONLY — these tables are never included in any export or sync bundle.
+    lambda conn: conn.executescript("""
+        CREATE TABLE IF NOT EXISTS conversations (
+            id         TEXT PRIMARY KEY,
+            title      TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS ix_conversations_updated
+            ON conversations(updated_at DESC);
+
+        CREATE TABLE IF NOT EXISTS messages (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id TEXT NOT NULL,
+            role            TEXT NOT NULL,
+            content         TEXT NOT NULL,
+            meta_json       TEXT,
+            created_at      TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS ix_messages_conv
+            ON messages(conversation_id, id ASC);
+    """),
 ]
 
 

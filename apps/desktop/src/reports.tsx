@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, ArrowUpRight, ArrowDownRight, ArrowLeft, TrendingUp, X, Search, MoreHorizontal } from "lucide-react";
 import { useApp } from "./store";
 import { api, type ReportCreateOut } from "./api";
 import { type Report, type Metric } from "./data";
 import { Badge, StatusBadge, Button, Segmented, Sparkline, EmptyState, ErrorBanner, Modal, Tooltip, Field, Input, Drawer, IconButton } from "./ui";
-import { ChatAffordance } from "./chat/ChatOverlay";
 import { queryKeys, bootstrapQueryFn, reportDetailQueryFn, getReportFromCache, getEngineReportIds, invalidate } from "./queries";
 
 const cardBase: React.CSSProperties = {
@@ -53,7 +52,6 @@ export function ReportsGrid() {
     <div className="eh-scroll" style={{ height: "100%", overflowY: "auto", padding: 28 }}>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 20 }}>
         <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.01em", margin: 0, flex: 1 }}>Reports</h1>
-        <ChatAffordance />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
         {reports.map((r) => <ReportCard key={r.id} report={r} onOpen={() => openReport(r.id)} />)}
@@ -556,6 +554,98 @@ function CreateReportDrawer({
   );
 }
 
+/* ---------------- Add metric drawer ---------------- */
+
+/**
+ * Lets the user add one or more Logic formulas to an existing report.
+ * Reads existing logic_ids from the report definition (NOT from report.metrics,
+ * which is empty while the report is in "collecting" status).
+ * Dedupes: never adds an ID already present in existingLogicIds.
+ */
+function AddMetricDrawer({
+  reportId,
+  existingLogicIds,
+  logics,
+  onClose,
+  onAdded,
+}: {
+  reportId: string;
+  existingLogicIds: string[];
+  logics: LogicItem[];
+  onClose: () => void;
+  onAdded: () => void;
+}) {
+  const [added, setAdded] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    if (added.length === 0) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      // Merge with existing, deduping by ID
+      const merged = [...new Set([...existingLogicIds, ...added])];
+      await api.updateReport(reportId, { logic_ids: merged });
+      await Promise.all([
+        invalidate.reportDetail(reportId),
+        invalidate.bootstrap(),
+      ]);
+      onAdded();
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Drawer
+      width={480}
+      onClose={onClose}
+      header={
+        <div style={{ display: "flex", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid var(--border-secondary)", flexShrink: 0, background: "var(--color-white)" }}>
+          <span style={{ fontSize: 16, fontWeight: 600 }}>Add metric</span>
+          <span style={{ flex: 1 }} />
+          <IconButton label="Close" onClick={onClose}><X size={18} /></IconButton>
+        </div>
+      }
+      footer={
+        <div style={{ display: "flex", gap: 10, padding: "14px 20px" }}>
+          <Button
+            hierarchy="primary"
+            style={{ flex: 1 }}
+            disabled={added.length === 0 || saving}
+            onClick={() => void handleSave()}
+          >
+            {saving ? "Adding…" : `Add ${added.length > 0 ? `${added.length} ` : ""}metric${added.length !== 1 ? "s" : ""}`}
+          </Button>
+          <Button hierarchy="tertiary" onClick={onClose} disabled={saving}>Cancel</Button>
+        </div>
+      }
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+          Choose formulas to add to this report. Already-included metrics are excluded from the list.
+        </div>
+        <LogicPicker
+          logics={logics}
+          added={[...existingLogicIds, ...added]}
+          onAdd={(id) => setAdded((prev) => [...prev, id])}
+          onRemove={(id) => setAdded((prev) => prev.filter((x) => x !== id))}
+        />
+        {saveError && (
+          <ErrorBanner
+            component="Report"
+            process="metric add stopped"
+            detail={saveError}
+          />
+        )}
+      </div>
+    </Drawer>
+  );
+}
+
 /* ---------------- Report view ---------------- */
 export function ReportView() {
   const id = useApp((s) => s.openReportId);
@@ -565,10 +655,18 @@ export function ReportView() {
   const setCollect = useApp((s) => s.setCollect);
   const engineLive = useApp((s) => s.engineLive);
   const [period, setPeriod] = useState<"7d" | "30d" | "custom">("30d");
+  const [addMetricOpen, setAddMetricOpen] = useState(false);
 
   const engineReportIds = getEngineReportIds();
   const isEngineReport = id !== null && engineReportIds.includes(id);
   const days = period !== "custom" ? PERIOD_DAYS[period] : undefined;
+
+  // Bootstrap gives us the logic list for the metric picker
+  const { data: bootstrap } = useQuery({
+    queryKey: queryKeys.engineBootstrap,
+    queryFn: bootstrapQueryFn,
+    staleTime: 2 * 60 * 1000,
+  });
 
   // Live query for the detail view. Only enabled when the engine is up and
   // this report is engine-backed. Falls back to the mock on isError.
@@ -591,6 +689,11 @@ export function ReportView() {
 
   if (!report) return null;
   void detailError; // offline — the mock report is shown as fallback
+
+  // Read existing logic_ids from the report definition — NOT from report.metrics,
+  // which is empty while the report is in "collecting" status.
+  const existingLogicIds: string[] = report.logic_ids ?? [];
+
   return (
     <div className="eh-scroll" style={{ height: "100%", overflowY: "auto" }}>
       <div style={{ position: "sticky", top: 0, background: "var(--surface-secondary)", borderBottom: "1px solid var(--border-secondary)", padding: "16px 28px", display: "flex", alignItems: "center", gap: 14, zIndex: 4 }}>
@@ -603,7 +706,13 @@ export function ReportView() {
           onChange={setPeriod}
           options={[{ value: "7d", label: "7d" }, { value: "30d", label: "30d" }, { value: "custom", label: "Custom" }]}
         />
-        <ChatAffordance />
+        <Button
+          hierarchy="secondary"
+          iconLeading={<Plus size={15} />}
+          onClick={() => setAddMetricOpen(true)}
+        >
+          Add metric
+        </Button>
         <Button hierarchy="primary" iconLeading={<TrendingUp size={15} />} onClick={() => setCollect(true)}>Build report</Button>
       </div>
       <div style={{ padding: 28 }}>
@@ -625,6 +734,15 @@ export function ReportView() {
         )}
       </div>
       {collectOpen && <CollectDialog reportId={report.id} onClose={() => setCollect(false)} count={Math.max(((report as Report).metricCount ?? report.metrics.length), 1)} />}
+      {addMetricOpen && (
+        <AddMetricDrawer
+          reportId={report.id}
+          existingLogicIds={existingLogicIds}
+          logics={bootstrap?.logic ?? []}
+          onClose={() => setAddMetricOpen(false)}
+          onAdded={() => setAddMetricOpen(false)}
+        />
+      )}
     </div>
   );
 }

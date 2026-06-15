@@ -168,6 +168,7 @@ class ReportOut(BaseModel):
     status: str
     lastBuilt: str
     metrics: list[MetricOut]
+    logic_ids: list[str] = []
 
 
 class ReportCreateOut(BaseModel):

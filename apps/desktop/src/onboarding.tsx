@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, AlertCircle, X, RefreshCw } from "lucide-react";
 import { useApp } from "./store";
 import { api } from "./api";
+import { secrets } from "./secrets";
+import { invalidate } from "./queries";
 import { buildMcpConfig } from "./data";
 import { Ket, Button, Field, Input, Select, Badge, Snippet, ErrorBanner, useCoachAnchor } from "./ui";
 import { updaterBridge } from "./updater";
@@ -45,55 +47,112 @@ export function Onboarding() {
   return null; // 'coach' handled by CoachMarks (not a dimmed card)
 }
 
-function DataSourceStep({ onBack, onConnect }: { onBack: () => void; onConnect: () => void }) {
+function DataSourceStep({ onBack, onConnect }: { onBack: () => void; onConnect: (src: { host: string; projectId: string; apiKey: string }) => void }) {
+  const [host, setHost] = useState("eu");
+  const [project, setProject] = useState("");
   const [key, setKey] = useState("");
   const [state, setState] = useState<"idle" | "ok" | "error">("idle");
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const test = async () => {
+    setBusy(true); setMsg("");
+    try {
+      const r = await api.testPosthog(host, project, key);
+      setState("ok"); setMsg(`Connection established — ${r.events_visible.toLocaleString()} events visible.`);
+    } catch (e) {
+      setState("error"); setMsg(e instanceof Error ? e.message : "PostHog: connection stopped. Check the host, project ID, and key.");
+    } finally { setBusy(false); }
+  };
+
+  // Persist to the OS keychain (best-effort; the bridge is absent in browser dev),
+  // then hand the credentials to the sync step.
+  const cont = async () => {
+    setBusy(true);
+    try { await secrets.saveSource({ id: `posthog:${project}`, kind: "posthog", host, projectId: project, days: 30, apiKey: key }); }
+    catch { /* browser dev: no keychain bridge — the sync step still has the key in hand */ }
+    finally { setBusy(false); onConnect({ host, projectId: project, apiKey: key }); }
+  };
+
+  const canTest = Boolean(project.trim() && key.trim()) && !busy;
+
   return (
     <StepCard width={500}>
       <h2 style={{ fontSize: 20, fontWeight: 600, margin: "0 0 16px" }}>Connect a data source</h2>
       <div style={{ border: "1px solid var(--border-secondary)", borderRadius: 12, padding: 18 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}><span style={{ fontSize: 15, fontWeight: 600 }}>PostHog</span>{state === "ok" && <Badge tone="success" dot>ok</Badge>}</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <Field label="Host"><Select options={[{ value: "us", label: "Cloud · US" }, { value: "eu", label: "Cloud · EU" }, { value: "self", label: "Self-hosted" }]} defaultValue="eu" /></Field>
-          <Field label="Project ID"><Input placeholder="111680" /></Field>
-          <Field label="API key" hint="stored locally in OS Keychain"><Input type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="phx_…" error={state === "error"} /></Field>
-          {state === "error" && <div style={{ display: "flex", gap: 8, fontSize: 13, color: "var(--error-700)" }}><AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} /><span>PostHog adapter: connection stopped. Key rejected by server (401). Check your key.</span></div>}
-          {state === "ok" && <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--success-700)" }}><Check size={16} />Connection established.</div>}
+          <Field label="Host"><Select options={[{ value: "us", label: "Cloud · US" }, { value: "eu", label: "Cloud · EU" }, { value: "self", label: "Self-hosted" }]} value={host} onChange={(e) => setHost(e.target.value)} /></Field>
+          <Field label="Project ID"><Input value={project} onChange={(e) => { setProject(e.target.value); setState("idle"); }} placeholder="111680" /></Field>
+          <Field label="API key" hint="stored locally in OS Keychain"><Input type="password" value={key} onChange={(e) => { setKey(e.target.value); setState("idle"); }} placeholder="phx_…" error={state === "error"} /></Field>
+          {state === "error" && <div style={{ display: "flex", gap: 8, fontSize: 13, color: "var(--error-700)" }}><AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1 }} /><span>{msg || "PostHog adapter: connection stopped. Key rejected by server. Check your key."}</span></div>}
+          {state === "ok" && <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--success-700)" }}><Check size={16} />{msg || "Connection established."}</div>}
         </div>
       </div>
       {["Amplitude", "Custom API"].map((s) => <div key={s} style={{ display: "flex", alignItems: "center", gap: 8, border: "1px solid var(--border-secondary)", borderRadius: 12, padding: "12px 16px", marginTop: 10, opacity: 0.65 }}><span style={{ fontSize: 14, fontWeight: 600, flex: 1 }}>{s}</span><Badge tone="neutral">soon</Badge></div>)}
       <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
         {state === "ok"
-          ? <Button hierarchy="primary" onClick={onConnect}>Continue</Button>
-          : <Button hierarchy="secondary" onClick={() => setState(key.trim() ? "ok" : "error")}>Test connection</Button>}
-        <Button hierarchy="tertiary" onClick={onBack}>Back</Button>
+          ? <Button hierarchy="primary" disabled={busy} onClick={cont}>{busy ? "Saving…" : "Continue"}</Button>
+          : <Button hierarchy="secondary" disabled={!canTest} onClick={test}>{busy ? "Testing…" : "Test connection"}</Button>}
+        <Button hierarchy="tertiary" onClick={onBack} disabled={busy}>Back</Button>
       </div>
     </StepCard>
   );
 }
 
 function SyncStep({ onDone }: { onDone: () => void }) {
-  const [n, setN] = useState(0);
-  const target = 184320;
+  const obSource = useApp((s) => s.obSource);
+  const [phase, setPhase] = useState<"syncing" | "done" | "error">("syncing");
+  const [ingested, setIngested] = useState(0);
+  const [err, setErr] = useState("");
+  const [tick, setTick] = useState(0);
+  const ran = useRef(false);
+
+  // Run the real PostHog sync once, using the credentials captured in the connect step,
+  // then refresh the cached reports/catalog so the app shows real data (no theater).
+  // `tick` lets Retry re-run the effect after a failure.
   useEffect(() => {
-    const start = performance.now();
-    let raf = 0;
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start) / 2500);
-      setN(Math.round(target * (1 - Math.pow(1 - p, 3))));
-      if (p < 1) raf = requestAnimationFrame(tick); else setTimeout(onDone, 500);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [onDone]);
+    if (ran.current) return;
+    ran.current = true;
+    (async () => {
+      if (!obSource) { onDone(); return; }
+      try {
+        const r = await api.syncPosthog(obSource.host, obSource.projectId, obSource.apiKey, 30);
+        setIngested(r.ingested);
+        await invalidate.bootstrap();
+        await invalidate.allReportDetails();
+        setPhase("done");
+        setTimeout(onDone, 900);
+      } catch (e) {
+        setErr(e instanceof Error ? e.message : "sync failed");
+        setPhase("error");
+      }
+    })();
+  }, [obSource, onDone, tick]);
+
   return (
     <StepCard>
-      <h2 style={{ fontSize: 20, fontWeight: 600, textAlign: "center", margin: "0 0 6px" }}>Loading event catalog</h2>
-      <div className="tnum" style={{ fontSize: 36, fontWeight: 600, textAlign: "center", letterSpacing: "-0.02em", margin: "14px 0" }}>{n.toLocaleString()}</div>
-      <div style={{ fontSize: 13, color: "var(--text-tertiary)", textAlign: "center", marginBottom: 18 }}>events received</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 4, height: 28, justifyContent: "center" }} aria-hidden>
-        {Array.from({ length: 11 }).map((_, i) => <span key={i} style={{ width: 4, height: 22, borderRadius: 2, background: "var(--brand-400)", animation: `eh-wave 1s ease-in-out ${i * 0.08}s infinite` }} />)}
-      </div>
+      <h2 style={{ fontSize: 20, fontWeight: 600, textAlign: "center", margin: "0 0 6px" }}>
+        {phase === "error" ? "Sync stopped" : phase === "done" ? "Event catalog loaded" : "Loading event catalog"}
+      </h2>
+      {phase !== "error" && (
+        <>
+          <div className="tnum" style={{ fontSize: 36, fontWeight: 600, textAlign: "center", letterSpacing: "-0.02em", margin: "14px 0" }}>{ingested.toLocaleString()}</div>
+          <div style={{ fontSize: 13, color: "var(--text-tertiary)", textAlign: "center", marginBottom: 18 }}>{phase === "done" ? "events ingested" : "syncing events…"}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, height: 28, justifyContent: "center" }} aria-hidden>
+            {Array.from({ length: 11 }).map((_, i) => <span key={i} style={{ width: 4, height: 22, borderRadius: 2, background: "var(--brand-400)", animation: phase === "syncing" ? `eh-wave 1s ease-in-out ${i * 0.08}s infinite` : "none", opacity: phase === "done" ? 0.4 : 1 }} />)}
+          </div>
+        </>
+      )}
+      {phase === "error" && (
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 14 }}>
+          <ErrorBanner component="PostHog" process="sync stopped" detail={err} />
+          <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+            <Button hierarchy="secondary" onClick={() => { ran.current = false; setErr(""); setPhase("syncing"); setTick((t) => t + 1); }}>Retry</Button>
+            <Button hierarchy="tertiary" onClick={onDone}>Continue anyway</Button>
+          </div>
+        </div>
+      )}
     </StepCard>
   );
 }

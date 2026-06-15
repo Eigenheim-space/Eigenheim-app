@@ -33,6 +33,7 @@
   --text-quaternary: var(--gray-400);
   --text-white: var(--color-white);
   --text-brand: var(--brand-700);
+  --text-brand-secondary: var(--brand-700);
 
   /* Semantic: surfaces */
   --surface-primary: var(--color-white);

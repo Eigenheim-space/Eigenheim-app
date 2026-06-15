@@ -300,6 +300,49 @@ def test_api_duplicate_404(client):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# R7 — ReportOut includes logic_ids (needed by the metric-add picker in the
+#       renderer so it can avoid double-adds even when report.metrics is empty
+#       e.g. status = "collecting").
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_report_detail_includes_logic_ids(client):
+    """GET /reports/{id} must include a logic_ids list."""
+    create = client.post("/reports", json={"name": "LID test", "period_days": 30, "logic_ids": ["mau", "ttv"]})
+    assert create.status_code == 200
+    rid = create.json()["id"]
+
+    r = client.get(f"/reports/{rid}")
+    assert r.status_code == 200
+    body = r.json()
+    assert "logic_ids" in body, "ReportOut must include logic_ids"
+    assert set(body["logic_ids"]) == {"mau", "ttv"}
+
+
+def test_report_detail_logic_ids_empty_for_no_formulas(client):
+    """logic_ids must be an empty list (not absent) when the report has no formulas."""
+    create = client.post("/reports", json={"name": "empty", "period_days": 7, "logic_ids": []})
+    assert create.status_code == 200
+    rid = create.json()["id"]
+
+    r = client.get(f"/reports/{rid}")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["logic_ids"] == []
+
+
+def test_report_detail_logic_ids_after_patch(client):
+    """After PATCH logic_ids, the detail endpoint reflects the new set."""
+    create = client.post("/reports", json={"name": "patch-lid", "period_days": 30, "logic_ids": ["mau"]})
+    rid = create.json()["id"]
+
+    client.patch(f"/reports/{rid}", json={"logic_ids": ["mau", "ttv", "activation"]})
+    r = client.get(f"/reports/{rid}")
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body["logic_ids"]) == {"mau", "ttv", "activation"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # R6 — CORS preflight must allow mutation verbs (regression: PATCH was missing
 #       from allow_methods, which 400'd every rename/update preflight).
 # ─────────────────────────────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ import { DecisionsView } from "./decisions";
 import { GraphView } from "./graph";
 import { RiceView } from "./rice";
 import { ChatOverlay } from "./chat/ChatOverlay";
+import { ChatPage } from "./chat/ChatPage";
 import { queryKeys, bootstrapQueryFn, reportDetailQueryFn, getEngineReportIds, queryClient } from "./queries";
 import { api } from "./api";
 import { updaterBridge } from "./updater";
@@ -44,11 +45,15 @@ export function App() {
 
   // Bootstrap query: replaces the old loadFromEngine() + trackers useEffect.
   // On success → engineLive=true; on error → engineLive=false (offline/mock mode).
+  // retry:20 / retryDelay:1000 gives ~20s of patience after the window opens.
+  // The Electron main process waits up to 30s for /health before opening the window,
+  // so in practice the engine is already up — but on a slow first launch (bundled
+  // python cold-start) the window may appear before /health answers, and this retry
+  // loop keeps the BootState visible rather than prematurely declaring failure.
   const { isSuccess: bootstrapOk, isError: bootstrapErr } = useQuery({
     queryKey: queryKeys.engineBootstrap,
     queryFn: bootstrapQueryFn,
-    // Retry aggressively at startup — engine may be starting up
-    retry: 3,
+    retry: 20,
     retryDelay: 1000,
   });
 
@@ -140,6 +145,7 @@ export function App() {
           {engine === "booting" ? <BootState />
             : engine === "failed" ? <EngineFailure />
             : view === "settings" ? <Settings />
+            : view === "chat" ? <ChatPage />
             : view === "report" ? <ReportView />
             : view === "tasks" ? <TasksView />
             : view === "goals" ? <GoalsView />
@@ -149,7 +155,8 @@ export function App() {
             : view === "rice" ? <RiceView />
             : <ReportsGrid />}
         </main>
-        {engine === "ready" && <RightPanel />}
+        {/* Suppress the right data panel on the chat page — it has its own history sidebar */}
+        {engine === "ready" && view !== "chat" && <RightPanel />}
       </div>
 
       {/* overlays */}

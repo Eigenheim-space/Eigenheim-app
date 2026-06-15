@@ -8,6 +8,52 @@ fix. The git tag is the release trigger (in-app auto-update reads the published 
 
 _Nothing yet._
 
+## v0.1.6 — 2026-06-15
+
+- Engine startup is resilient and diagnosable: a failure in a best-effort step (backup,
+  migrations, catalog refresh, audit, scheduler) is logged and the engine still serves
+  instead of silently dying behind a sidecar timeout; only the schema-critical path is
+  fatal. The Electron host now captures the engine's output to `engine.log` (session
+  token redacted) and surfaces the real failure via "Copy diagnostics"; the startup wait
+  is more patient (30s + 20 renderer retries) for a cold packaged launch.
+- Fixed Key Result creation returning 500: the create route returned the raw row but
+  its response model requires the computed fields (status/progress/…); it now returns
+  the same computed shape as the list/detail routes.
+- Removed the standalone `⌘K` chip from every page (Tasks/Goals/Prioritization/
+  Hypotheses/Decisions); the `⌘K` shortcut and the rail Chat `⌘K` label remain.
+- Graph: the "Directory path" field now has a native **Browse…** folder picker
+  (Electron open-directory dialog); the text input still works in plain dev.
+- Chat provider badge is honest about local models: it pings Ollama and shows
+  `Local · not connected` when the endpoint is unreachable instead of always claiming
+  `Local · <model>`.
+- Chat is now the first item in the left rail (above Reports).
+- Onboarding now really connects PostHog. The connect step was a façade: its Host /
+  Project ID fields were unbound, "Test connection" only flipped a local flag, and the
+  sync screen was a fake event counter — so a source "connected" in onboarding was never
+  saved or synced (Settings showed nothing, Reports stayed empty). It now binds all
+  fields, tests against the engine (`/datasources/posthog/test`), saves the source to the
+  OS keychain on continue (same path as Settings), and the sync step runs a real
+  `/datasources/posthog/sync` then refreshes reports + catalog. Sync failures show an
+  error with Retry / Continue instead of fake progress.
+- Reports: **add a metric** to an existing report — an "Add metric" button on the report
+  page opens the logic picker and appends the chosen formulas (`PATCH /reports/{id}`).
+  `report_detail` now returns `logic_ids` so the picker never double-adds.
+- The `⌘K` affordance moved from the report header to the left-rail **Chat** item (with a
+  tooltip); the report top bar is no longer cluttered by it.
+- Security: fixed a chat egress gap — "Set as default" on the cloud (OpenRouter) provider
+  card now shows the data-egress disclosure before activating, and the send path refuses a
+  cloud call until the per-session egress confirmation is given. The chat model logic is
+  factored into a shared engine (`useChatEngine`) so the overlay and the upcoming chat page
+  share one egress/trace path.
+- The left-rail **Chat** now opens a full chat **page** (the `⌘K` overlay stays for quick
+  ask). The page is a three-column layout: a conversation history sidebar (New chat +
+  Today/Yesterday/Earlier), the thread with verified/inferred metric chips + trace links and
+  the always-on boundary footer, and a composer with prompt suggestions. Conversations are
+  **persisted locally** (engine SQLite — transcripts never leave the machine, never in any
+  export). Page and overlay share one chat engine + one egress/trace path. The right data
+  panel is hidden on the chat page. (Mic, file-attach, and the context-window meter from the
+  generic mock are intentionally omitted — eigenheim's chat is a reader over the data layer.)
+
 ## v0.1.5 — 2026-06-15
 
 - First-run onboarding now auto-shows once: on a fresh launch with no data source

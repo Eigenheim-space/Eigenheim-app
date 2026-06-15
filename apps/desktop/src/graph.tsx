@@ -263,24 +263,50 @@ function BuildFlow({ onBuilt }: { onBuilt: (runId: string) => void }) {
           <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "var(--text-secondary)", marginBottom: 6 }}>
             Directory path
           </label>
-          <input
-            type="text"
-            value={path}
-            onChange={(e) => setPath(e.target.value)}
-            placeholder="/Users/you/specs"
-            disabled={building}
-            style={{
-              width: "100%", boxSizing: "border-box",
-              border: "1px solid var(--border-primary)",
-              borderRadius: "var(--radius-input)",
-              padding: "8px 12px", fontSize: 13,
-              fontFamily: "var(--font-mono)",
-              color: "var(--text-primary)",
-              background: "var(--surface-primary)",
-              outline: "none",
-              boxShadow: "var(--shadow-xs)",
-            }}
-          />
+          <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+            <input
+              type="text"
+              value={path}
+              onChange={(e) => setPath(e.target.value)}
+              placeholder="/Users/you/specs"
+              disabled={building}
+              style={{
+                flex: 1, boxSizing: "border-box",
+                border: "1px solid var(--border-primary)",
+                borderRadius: "var(--radius-input)",
+                padding: "8px 12px", fontSize: 13,
+                fontFamily: "var(--font-mono)",
+                color: "var(--text-primary)",
+                background: "var(--surface-primary)",
+                outline: "none",
+                boxShadow: "var(--shadow-xs)",
+              }}
+            />
+            {typeof window !== "undefined" && window.eigenheim?.chooseDirectory && (
+              <button
+                type="button"
+                disabled={building}
+                onClick={async () => {
+                  const chosen = await window.eigenheim!.chooseDirectory!();
+                  if (chosen) setPath(chosen);
+                }}
+                style={{
+                  padding: "8px 14px", fontSize: 13, fontWeight: 500,
+                  border: "1px solid var(--border-primary)",
+                  borderRadius: "var(--radius-input)",
+                  background: "var(--surface-primary)",
+                  color: "var(--text-secondary)",
+                  cursor: building ? "not-allowed" : "pointer",
+                  whiteSpace: "nowrap",
+                  boxShadow: "var(--shadow-xs)",
+                }}
+                onMouseEnter={(e) => { if (!building) e.currentTarget.style.background = "var(--gray-50)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "var(--surface-primary)"; }}
+              >
+                Browse…
+              </button>
+            )}
+          </div>
         </div>
 
         {error && (

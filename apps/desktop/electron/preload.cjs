@@ -39,4 +39,10 @@ contextBridge.exposeInMainWorld("eigenheim", {
       return () => ipcRenderer.removeListener("updater:status", handler);
     },
   },
+  // Native folder picker. Returns the chosen path string, or null if cancelled.
+  // Absent in browser dev mode — callers must guard with optional chaining.
+  chooseDirectory: () => ipcRenderer.invoke("dialog:openDirectory"),
+  // Engine diagnostics for failure-screen reporting. Returns app version, platform,
+  // spawn cmd (token-free), health/exit status, and last ~120 redacted log lines.
+  engineDiagnostics: () => ipcRenderer.invoke("engine:diagnostics"),
 });

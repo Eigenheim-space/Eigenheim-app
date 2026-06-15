@@ -41,8 +41,6 @@ import { queryKeys, riceQueryFn, bootstrapQueryFn, invalidate, findReportForMetr
 import {
   Badge, Button, IconButton, EmptyState, ErrorBanner, Segmented,
 } from "./ui";
-import { ChatAffordance } from "./chat/ChatOverlay";
-
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
@@ -913,8 +911,6 @@ export function RiceView() {
             Last computed {lastComputed}
           </span>
         )}
-
-        <ChatAffordance />
 
         <Button
           hierarchy="primary"

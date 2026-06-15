@@ -39,7 +39,6 @@ import { queryKeys, hypothesesQueryFn, bootstrapQueryFn, invalidate, findReportF
 import {
   Badge, Button, IconButton, EmptyState, ErrorBanner, Tooltip, Segmented, Drawer,
 } from "./ui";
-import { ChatAffordance } from "./chat/ChatOverlay";
 import { relativeTime } from "./lib/time";
 import { useTraceForLogic } from "./hooks/useTraceForLogic";
 
@@ -929,8 +928,6 @@ export function HypothesesView() {
             {formatLastUpdated()}
           </span>
         )}
-
-        <ChatAffordance />
 
         <Button
           hierarchy="primary"

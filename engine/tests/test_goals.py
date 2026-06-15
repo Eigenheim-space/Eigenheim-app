@@ -777,6 +777,54 @@ def test_scope_map_goals_read_denied_for_tasks_read_key():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# G7 — POST /key-results returns computed KeyResultOut (regression for 500)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_post_key_results_returns_computed_fields(tmp_path, monkeypatch):
+    """POST /key-results must return a fully computed KeyResultOut — not the raw
+    store dict — so FastAPI response validation succeeds (regression for the 500
+    caused by missing created_at / status / progress / spark / task_count)."""
+    from fastapi.testclient import TestClient
+    import eigenheim.app as appmod
+    from eigenheim.app import app
+
+    db_path = str(tmp_path / "g7.db")
+    monkeypatch.setenv("EIGENHEIM_DB", db_path)
+    monkeypatch.delenv("EIGENHEIM_TOKEN", raising=False)
+    monkeypatch.delenv("EIGENHEIM_TOKEN_FILE", raising=False)
+    appmod._auth_state["token"] = None
+
+    with TestClient(app, raise_server_exceptions=True) as client:
+        # Create an objective first.
+        obj_resp = client.post("/objectives", json={"title": "G7 Objective", "period": "Q3"})
+        assert obj_resp.status_code == 200, f"create objective: {obj_resp.text}"
+        obj_id = obj_resp.json()["id"]
+
+        resp = client.post(
+            "/key-results",
+            json={
+                "objective_id": obj_id,
+                "name": "G7 Activation KR",
+                "logic_id": "activation",
+                "target": 0.0,
+                "comparison": "gte",
+                "period": "Q3",
+            },
+        )
+        # A 422/500 here means the route returned a raw dict without computed fields.
+        assert resp.status_code == 200, f"POST /key-results returned {resp.status_code}: {resp.text}"
+        body = resp.json()
+        for field in ("id", "name", "created_at", "status", "progress", "task_count", "spark"):
+            assert field in body, f"computed field '{field}' missing from POST /key-results response"
+        assert body["status"] in ("ahead", "behind", "stale", "draft"), (
+            f"unexpected status value: {body['status']!r}"
+        )
+        assert isinstance(body["progress"], float)
+        assert isinstance(body["task_count"], int)
+        assert isinstance(body["spark"], list)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # No LLM import — determinism guard
 # ─────────────────────────────────────────────────────────────────────────────
 
