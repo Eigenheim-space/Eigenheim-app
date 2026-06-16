@@ -102,7 +102,6 @@ export function ChatPage() {
   const autoScrollRef = useRef(true);
 
   const isCloud = engine.isCloud;
-  const isAgent = engine.isAgent;
   const ollamaReach = useOllamaReachability();
 
   // ── Queries ────────────────────────────────────────────────────────────────
@@ -572,8 +571,6 @@ export function ChatPage() {
             >
               {isCloud ? (
                 <Badge tone="danger">Cloud: OpenRouter</Badge>
-              ) : isAgent ? (
-                <Badge tone="neutral">Agent · MCP</Badge>
               ) : ollamaReach === "unreachable" ? (
                 <Badge tone="danger">Local · not connected</Badge>
               ) : ollamaReach === "model-missing" ? (
@@ -904,7 +901,7 @@ export function ChatPage() {
                 onKeyDown={onKeyDown}
                 placeholder="Ask about eigenheim..."
                 rows={1}
-                disabled={engine.streaming || isAgent}
+                disabled={engine.streaming}
                 className="eh-chat-input"
                 style={{
                   display: "block",
@@ -934,7 +931,7 @@ export function ChatPage() {
                 <Button
                   hierarchy="primary"
                   size="sm"
-                  disabled={engine.streaming || !input.trim() || isAgent}
+                  disabled={engine.streaming || !input.trim()}
                   onClick={() => void trySend(input)}
                 >
                   Send

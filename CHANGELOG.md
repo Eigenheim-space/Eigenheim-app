@@ -8,6 +8,15 @@ fix. The git tag is the release trigger (in-app auto-update reads the published 
 
 _Nothing yet._
 
+## v0.1.8 — 2026-06-15
+
+- "Agent / MCP" is no longer a chat provider — it was inert in the chat box (eigenheim is the
+  MCP server; your agent reads it, the conversation lives in your agent). The chat provider
+  switcher now offers only Local (Ollama) and Cloud (OpenRouter); the composer is always live.
+  Connecting an external agent stays in Settings -> AI Chat as a "Connect your agent - stdio MCP"
+  card (the MCP config for Claude Desktop / Cursor / any MCP client), framed as a connection
+  method, not a chat option.
+
 ## v0.1.7 — 2026-06-15
 
 - Left rail restyled to a compact icon-rail: each item is an icon with a small label beneath

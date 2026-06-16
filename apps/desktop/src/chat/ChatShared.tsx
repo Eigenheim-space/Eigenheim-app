@@ -5,7 +5,7 @@
  * No model logic here — all state comes from props or the parent's useChatEngine call.
  *
  * Exports:
- *   ProviderSwitcher   — dropdown to switch between ollama / openrouter / agent
+ *   ProviderSwitcher   — dropdown to switch between ollama / openrouter
  *   MetricChipEl       — inline verified/inferred metric chip
  *   AnswerText         — assistant text with inline metric chips
  */
@@ -154,13 +154,6 @@ export function ProviderSwitcher({ onClose, onSetup }: ProviderSwitcherProps) {
       sub: chatHasCloudKey ? "OpenRouter" : "Not configured",
       configured: chatHasCloudKey,
       modelLabel: chatOpenRouterModel,
-    },
-    {
-      kind: "agent",
-      title: "External agent",
-      sub: "MCP · local to your agent",
-      configured: true,
-      modelLabel: "MCP",
     },
   ];
 

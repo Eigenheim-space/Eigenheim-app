@@ -560,14 +560,14 @@ function AiChat() {
         </>
       )}
 
-      {/* Option C — External agent (stdio MCP) */}
+      {/* External agent — MCP connection config (not a chat provider) */}
       {card(
         <>
-          {cardHeader("External agent · stdio MCP", undefined, chatProvider === "agent")}
+          {cardHeader("Connect your agent · stdio MCP")}
           <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 14, lineHeight: 1.5 }}>
-            Your desktop agent (Claude Desktop, Cursor, etc.) connects to eigenheim over stdio,
-            not HTTP. Paste the config below into your agent's MCP settings.
-            The key from API keys authenticates every tool call — nothing goes to any cloud provider.
+            Connect Claude Desktop, Cursor, or any MCP-capable agent to eigenheim over stdio.
+            Your agent reads metrics and traces directly — no messages route through this chat.
+            Paste the config below into your agent's MCP settings and create a key in the API keys tab.
           </p>
           <Field
             label="MCP config (paste into your agent)"
@@ -619,13 +619,10 @@ function AiChat() {
               </button>
             </div>
           </Field>
-          <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ marginTop: 10 }}>
             <Badge tone={engineLive ? "success" : "neutral"} dot={engineLive}>
               {engineLive ? "MCP server ready" : "Engine offline"}
             </Badge>
-            <Button hierarchy="secondary" size="sm" onClick={() => setChatProvider("agent")}>
-              Set as default
-            </Button>
           </div>
         </>
       )}

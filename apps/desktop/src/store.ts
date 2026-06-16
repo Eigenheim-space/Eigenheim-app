@@ -259,7 +259,8 @@ export const useApp = create<AppState>((set, get) => ({
   openChat: () => set({ chatOpen: true }),
   closeChat: () => set({ chatOpen: false, chatError: null, chatStreaming: false }),
   chatProvider: "ollama",
-  setChatProvider: (chatProvider) => set({ chatProvider }),
+  // Coerce any stale value (e.g. "agent" persisted in a pre-migration session) to "ollama".
+  setChatProvider: (p) => set({ chatProvider: (p === "openrouter" || p === "ollama") ? p : "ollama" }),
   chatOllamaEndpoint: "http://localhost:11434",
   setChatOllamaEndpoint: (chatOllamaEndpoint) => set({ chatOllamaEndpoint }),
   chatOllamaModel: "mistral",

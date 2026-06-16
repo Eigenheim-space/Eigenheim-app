@@ -53,7 +53,6 @@ export function ChatOverlay() {
   const switcherRef = useRef<HTMLDivElement>(null);
 
   const isCloud = engine.isCloud;
-  const isAgent = engine.isAgent;
   const ollamaReach = useOllamaReachability();
 
   // Abort in-flight stream on overlay unmount
@@ -209,8 +208,6 @@ export function ChatOverlay() {
             >
               {isCloud ? (
                 <Badge tone="danger">Cloud: OpenRouter</Badge>
-              ) : isAgent ? (
-                <Badge tone="neutral">Agent · MCP</Badge>
               ) : ollamaReach === "unreachable" ? (
                 <Badge tone="danger">Local · not connected</Badge>
               ) : ollamaReach === "model-missing" ? (
@@ -261,9 +258,7 @@ export function ChatOverlay() {
                 padding: "16px 0",
               }}
             >
-              {isAgent
-                ? "External agent mode. Use your desktop agent over MCP — eigenheim does not route messages from here."
-                : !isCloud && ollamaReach === "unreachable"
+              {!isCloud && ollamaReach === "unreachable"
                 ? "Ollama is not running. Start it locally, or switch to a different provider in Settings → AI Chat."
                 : !isCloud && ollamaReach === "model-missing"
                 ? `Model "${chatOllamaModel}" isn't pulled. Run: ollama pull ${chatOllamaModel}`
@@ -483,7 +478,7 @@ export function ChatOverlay() {
               onKeyDown={onKeyDown}
               placeholder="Ask about this report..."
               rows={1}
-              disabled={engine.streaming || isAgent}
+              disabled={engine.streaming}
               style={{
                 flex: 1,
                 resize: "none",
@@ -493,10 +488,7 @@ export function ChatOverlay() {
                 borderRadius: "var(--radius-md)",
                 border: "1px solid var(--border-primary)",
                 outline: "none",
-                background:
-                  engine.streaming || isAgent
-                    ? "var(--gray-50)"
-                    : "var(--color-white)",
+                background: engine.streaming ? "var(--gray-50)" : "var(--color-white)",
                 color: "var(--text-primary)",
                 lineHeight: 1.5,
                 minHeight: 40,
@@ -507,7 +499,7 @@ export function ChatOverlay() {
             <Button
               hierarchy="primary"
               size="md"
-              disabled={engine.streaming || !input.trim() || isAgent}
+              disabled={engine.streaming || !input.trim()}
               onClick={() => void trySend(input)}
             >
               Send

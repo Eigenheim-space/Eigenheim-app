@@ -2,16 +2,18 @@
  * chat/providers.ts
  *
  * Dumb adapter layer for the Cmd+K overlay. The engine never imports this.
- * One interface, three adapters:
+ * Two adapters:
  *   A — OpenRouter (cloud, BYO key, data egress)
  *   B — Ollama    (local, fully on-machine)
- *   C — External agent (informational only, no in-app model call)
+ *
+ * External agent (MCP) is a connection method, not a chat provider.
+ * Configure it in Settings → AI Chat → External agent.
  *
  * Adapters are intentionally minimal: one async method, no retry logic,
  * no streaming middleware, no tool routing.
  */
 
-export type ProviderKind = "openrouter" | "ollama" | "agent";
+export type ProviderKind = "openrouter" | "ollama";
 
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
@@ -175,27 +177,6 @@ export class OllamaAdapter implements ChatProvider {
     }
 
     return accumulated;
-  }
-}
-
-// ─── C: External agent (informational, no in-app model call) ─────────────────
-
-/**
- * The user's own desktop agent reads eigenheim via MCP.
- * This adapter is a no-op: it informs the user to use their agent directly.
- * No HTTP request is made from eigenheim to any LLM.
- */
-export class AgentAdapter implements ChatProvider {
-  kind: ProviderKind = "agent";
-  label = "Agent · MCP";
-
-  chat(_messages: ChatMessage[], _onChunk?: (delta: string) => void, _signal?: AbortSignal): Promise<string> {
-    return Promise.reject(
-      new Error(
-        "External agent mode: use your desktop agent to talk to eigenheim over MCP. " +
-        "eigenheim does not route messages to your agent from this chat."
-      )
-    );
   }
 }
 

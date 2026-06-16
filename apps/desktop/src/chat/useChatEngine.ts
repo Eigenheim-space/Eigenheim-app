@@ -21,7 +21,6 @@ import { buildContextBlock } from "./context";
 import {
   OpenRouterAdapter,
   OllamaAdapter,
-  AgentAdapter,
   type ChatMessage,
 } from "./providers";
 import { chatSecrets } from "./chatSecrets";
@@ -37,8 +36,6 @@ export interface ChatEngineResult {
   error: string | null;
   /** True when cloud (OpenRouter) is the active provider. */
   isCloud: boolean;
-  /** True when the external-agent adapter is active. */
-  isAgent: boolean;
   /**
    * Send a user message. Returns "egress_required" if cloud is active and the
    * egress gate has not been confirmed this session — the caller must surface
@@ -82,10 +79,8 @@ export function useChatEngine(): ChatEngineResult {
   const abortRef = useRef<AbortController | null>(null);
 
   const isCloud = chatProvider === "openrouter";
-  const isAgent = chatProvider === "agent";
 
   const getAdapter = useCallback(async () => {
-    if (isAgent) return new AgentAdapter();
     if (isCloud) {
       const key = await chatSecrets.getKey();
       if (!key)
@@ -98,7 +93,7 @@ export function useChatEngine(): ChatEngineResult {
       endpoint: chatOllamaEndpoint,
       model: chatOllamaModel,
     });
-  }, [isAgent, isCloud, chatOpenRouterModel, chatOllamaEndpoint, chatOllamaModel]);
+  }, [isCloud, chatOpenRouterModel, chatOllamaEndpoint, chatOllamaModel]);
 
   const send = useCallback(
     async (text: string): Promise<EgressSignal> => {
@@ -209,7 +204,6 @@ export function useChatEngine(): ChatEngineResult {
     streaming: chatStreaming,
     error: chatError,
     isCloud,
-    isAgent,
     send,
     stop,
     clear,
